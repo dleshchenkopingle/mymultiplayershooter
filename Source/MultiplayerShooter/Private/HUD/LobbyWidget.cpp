@@ -20,9 +20,10 @@ void ULobbyWidget::AppendPlayer(ALobbyPlayerState* PlayerState)
 {
 	if (PlayerState && DisplayText)
 	{
-		FText CurrentText = DisplayText->GetText();
-		FString NewTextString = CurrentText.ToString() +
-			'\n' +
+		FString CurrentString = DisplayText->GetText().ToString();
+
+		if (PlayerCounter > 0) CurrentString = CurrentString + '\n';
+		FString NewTextString = CurrentString +
 			FString::FromInt(++PlayerCounter) +
 			". " +
 			PlayerState->GetPlayerName() +

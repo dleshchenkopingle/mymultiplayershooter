@@ -59,8 +59,17 @@ public:
 	UFUNCTION(Client, Reliable)
 	void UpdateHUD();
 
+	UFUNCTION(Client, Reliable)
+	void RemoveHUD();
+
+	UFUNCTION(Client, Reliable)
+	void TogglePlayersListWidget();
+
 	UFUNCTION(Server, Reliable)
 	void RequestUpdateTimes();
+
+	UFUNCTION(Server, Reliable)
+	void CheckMatchState();
 
 private:
 	UPROPERTY()
@@ -108,12 +117,5 @@ private:
 	UPROPERTY(Replicated)
 	FName MatchState;
 
-	//UFUNCTION(Client, Reliable)
-	//void UpdateWaitingToStartHUD();
-
-	UFUNCTION(Server, Reliable)
-	void CheckMatchState();
-
-	//UFUNCTION(Server, Reliable)
 	void JoinMidGame(float LevelStarting, float Warmup, float Match, float Cooldown, FName State);
 };

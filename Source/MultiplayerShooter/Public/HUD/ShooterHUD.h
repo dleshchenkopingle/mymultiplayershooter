@@ -31,6 +31,8 @@ public:
 
 	void Refresh();
 	void Update();
+	void Remove();
+	void TogglePlayersListWidget();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -51,6 +53,12 @@ private:
 	/** Announcement Widget */
 	UPROPERTY()
 	class UAnnouncementWidget* Announcement;
+
+	UPROPERTY(EditAnywhere, Category = Match)
+	TSubclassOf<class UUserWidget> PlayersListWidgetClass;
+
+	UPROPERTY()
+	class UPlayersListWidget* PlayersListWidget;
 	
 	/**
 	 *	Draw HUD cross hairs
@@ -58,6 +66,7 @@ private:
 	void DrawCrosshairs(UTexture2D* Texture, const FVector2D& Spread);
 
 	void AddAnnouncement();
+	void InitPlayersListWidget();
 	
 	FHUDPackage HUDPackage;
 	FVector2D ViewportCenter;

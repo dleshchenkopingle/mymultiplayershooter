@@ -5,9 +5,13 @@
 #include "Components/TextBlock.h"
 #include "HUD/CharacterOverlay.h"
 #include "HUD/AnnouncementWidget.h"
+#include "HUD/PlayersListWidget.h"
 #include "Character/MainCharacter.h"
 #include "ShooterComponents/CombatComponent.h"
 #include "PlayerController/ShooterPlayerController.h"
+#include "GameFramework/GameState.h"
+#include "Kismet/GameplayStatics.h"
+
 
 // The DrawHUD function will be automatically called when we set the default HUD as BP_ShooterHUD in BP_GameMode settings.
 void AShooterHUD::DrawHUD()
@@ -32,17 +36,25 @@ void AShooterHUD::BeginPlay()
 	Super::BeginPlay();
 
 	AddAnnouncement();
+	InitPlayersListWidget();
 }
 
 void AShooterHUD::AddCharacterOverlay()
 {
 	// APlayerController* PlayerController = GetOwningPlayerController();
-	if (CharacterOverlayClass)
+	if (CharacterOverlayClass && !CharacterOverlay)
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(GetWorld(), CharacterOverlayClass, FName("Character Overlay"));
-		if (!CharacterOverlay) return;
+		if (!CharacterOverlay)
+		{
+			return;
+		}
 
 		Refresh();
+	}
+
+	if (!CharacterOverlay->IsInViewport())
+	{
 		CharacterOverlay->AddToViewport();
 	}
 }
@@ -76,18 +88,49 @@ void AShooterHUD::Refresh()
 
 void AShooterHUD::Update()
 {
-	UE_LOG(LogTemp, Warning, TEXT("AShooterHUD::Update 0"));
-
 	if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(GetOwningPlayerController()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AShooterHUD::Update 1"));
-
 		ShooterPlayerController->SetHUDTime();
-		ShooterPlayerController->HandleMatchState();
+		//ShooterPlayerController->HandleMatchState();
 	}
-	else
+
+	if (PlayersListWidget && PlayersListWidget->GetIsVisible())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AShooterHUD::Update 3"));
+		if (AGameStateBase* GameState = UGameplayStatics::GetGameState(this))
+		{
+			PlayersListWidget->ClearWidget();
+			auto PlayerArray = GameState->PlayerArray;
+			for (int32 i = 0; i < PlayerArray.Num(); ++i)
+			{
+				PlayersListWidget->AppendPlayer(PlayerArray[i].Get());
+			}
+		}
+	}
+}
+
+void AShooterHUD::Remove()
+{
+	if (CharacterOverlay)
+	{
+		CharacterOverlay->RemoveFromParent();
+	}
+
+	if (Announcement)
+	{
+		Announcement->RemoveFromParent();
+	}
+
+	if (PlayersListWidget)
+	{
+		PlayersListWidget->RemoveFromParent();
+	}
+}
+
+void AShooterHUD::TogglePlayersListWidget()
+{
+	if (PlayersListWidget)
+	{
+		PlayersListWidget->ToggleWidget();
 	}
 }
 
@@ -111,15 +154,25 @@ void AShooterHUD::DrawCrosshairs(UTexture2D* Texture, const FVector2D& Spread)
 
 void AShooterHUD::AddAnnouncement()
 {
-	UE_LOG(LogTemp, Warning, TEXT("AShooterHUD::AddAnnouncement"));
-
 	if (AnnouncementClass && !Announcement)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Announcement Added"));
-
 		Announcement = CreateWidget<UAnnouncementWidget>(GetWorld(), AnnouncementClass, FName("Announcement"));
-		if (!Announcement) return;
+		if (!Announcement)
+		{
+			return;
+		}
 	}
 
-	Announcement->AddToViewport();
+	if (!Announcement->IsInViewport())
+	{
+		Announcement->AddToViewport();
+	}
+}
+
+void AShooterHUD::InitPlayersListWidget()
+{
+	if (PlayersListWidgetClass)
+	{
+		PlayersListWidget = CreateWidget<UPlayersListWidget>(GetWorld(), PlayersListWidgetClass, FName("PlayersList"));
+	}
 }

@@ -46,6 +46,8 @@ AMainCharacter::AMainCharacter()
 	OverheadWidget->SetupAttachment(RootComponent);
 
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
+	Combat->SetIsReplicated(true);
+
 	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("Buff Component"));
 
 	TimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline Component"));
@@ -109,7 +111,8 @@ void AMainCharacter::AimOffset(float DeltaTime)
 
 		// If we aim, we turn in place when needed, if we just click aim once, we should wait for the 'Turn in place' finished
 		// so we need to check the TurningInPlace condition.
-		if (IsAiming() || TurningInPlace != ETurningInPlace::ETIP_NotTurning) TurnInPlace(DeltaTime);
+		//if (IsAiming() || TurningInPlace != ETurningInPlace::ETIP_NotTurning) TurnInPlace(DeltaTime);
+		TurnInPlace(DeltaTime);
 	}
 	else if (Speed > 0.f || bIsInAir)
 	{
@@ -429,11 +432,19 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ThisClass::ReloadButtonPressed);
 	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &ThisClass::ThrowButtonPressed);
 	PlayerInputComponent->BindAction("ToggleReady", IE_Pressed, this, &ThisClass::ToggleReadyPressed);
+	PlayerInputComponent->BindAction("TogglePlayersListWidget", IE_Pressed, this, &ThisClass::TogglePlayersListWidgetPressed);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ThisClass::MoveForward); 
 	PlayerInputComponent->BindAxis("MoveRight", this, &ThisClass::MoveRight);
 	PlayerInputComponent->BindAxis("TurnRight", this, &ThisClass::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &ThisClass::LookUpAtRate);
+}
+
+void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AMainCharacter, OverlappingWeapon, COND_OwnerOnly);
 }
 
 void AMainCharacter::MoveForward(float Value)
@@ -479,6 +490,21 @@ void AMainCharacter::EquipButtonPressed()
 {
 	if (Combat)
 	{
+		if (HasAuthority())
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquipButtonPressed();
+		}
+	}
+}
+
+void AMainCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (Combat)
+	{
 		Combat->EquipWeapon(OverlappingWeapon);
 	}
 }
@@ -494,7 +520,7 @@ void AMainCharacter::CrouchButtonPressed()
 	if (GetCharacterMovement()->IsFalling()) return;
 	
 	if (bIsCrouched) UnCrouch();
-	else Crouch();
+	else if (Combat && Combat->EquippedWeapon) Crouch();
 }
 
 void AMainCharacter::AimButtonPressed()
@@ -571,6 +597,20 @@ void AMainCharacter::ShowOverheadWidget()
 			CurrentOverheadWidget->ShowPlayerName(this);
 		}
 	}
+}
+
+void AMainCharacter::TogglePlayersListWidgetPressed()
+{
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetController());
+	if (ShooterPlayerController)
+	{
+		ShooterPlayerController->TogglePlayersListWidget();
+	}
+}
+
+void AMainCharacter::OnRep_OverlappingWeapon()
+{
+	OverlappingWeapon->ShowPickupWidget(true);
 }
 
 void AMainCharacter::PostInitializeComponents()
@@ -671,7 +711,7 @@ void AMainCharacter::HandleIsRespawned()
 	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetController());
 	if (ShooterPlayerController)
 	{
-		ShooterPlayerController->RefreshHUD();
+		ShooterPlayerController->UpdateHUD();
 	}
 }
 

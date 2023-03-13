@@ -38,8 +38,6 @@ void AShooterPlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	ShooterHUD = Cast<AShooterHUD>(GetHUD());
-	
-	if (IsLocalController()) CheckMatchState();
 }
 
 void AShooterPlayerController::Tick(float DeltaTime)
@@ -47,7 +45,6 @@ void AShooterPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	CheckTimeSync(DeltaTime);
-	CheckMatchState();
 }
 
 void AShooterPlayerController::OnPossess(APawn* InPawn)
@@ -64,7 +61,11 @@ void AShooterPlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
 
-	if (IsLocalController()) RequestServerTimeFromClient(GetWorld()->GetTimeSeconds());
+	if (IsLocalController())
+	{
+		RequestServerTimeFromClient(GetWorld()->GetTimeSeconds());
+		CheckMatchState();
+	}
 }
 
 void AShooterPlayerController::UpdatePlayerHealth(float Health, float MaxHealth)
@@ -229,35 +230,35 @@ void AShooterPlayerController::RefreshHUD()
 
 void AShooterPlayerController::SetHUDTime_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime"));
+	//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime"));
 
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::WaitingToStart"));
+		//UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::WaitingToStart"));
 		TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	}
 	else if (MatchState == MatchState::InProgress)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::InProgress"));
+		//UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::InProgress"));
 		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::Cooldown"));
+		//UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::Cooldown"));
 		TimeLeft = WarmupTime + MatchTime + CooldownTime - GetServerTime() + LevelStartingTime;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("else"));
+		//UE_LOG(LogTemp, Warning, TEXT("MatchState == else"));
 	}
 
 	const int32 SecondsLeft = FMath::CeilToInt32(TimeLeft);
 
-	UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime SecondsLeft: %i"), SecondsLeft);
-	UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime WarmupTime: %f"), WarmupTime);
-	UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime GetServerTime(): %f"), GetServerTime());
-	UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime LevelStartingTime: %f"), LevelStartingTime);
+	//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime SecondsLeft: %i"), SecondsLeft);
+	//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime WarmupTime: %f"), WarmupTime);
+	//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime GetServerTime(): %f"), GetServerTime());
+	//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime LevelStartingTime: %f"), LevelStartingTime);
 
 	if (SecondsLeft != CountdownInt)
 	{
@@ -275,9 +276,13 @@ void AShooterPlayerController::SetHUDTime_Implementation()
 
 void AShooterPlayerController::HandleMatchState_Implementation()
 {
+	if (!ShooterHUD) return;
+
 	if (MatchState == MatchState::InProgress)
 	{
-		if (!ShooterHUD->GetCharacterOverlay()) ShooterHUD->AddCharacterOverlay();
+		//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::HandleMatchState_Implementation 0"));
+
+		ShooterHUD->AddCharacterOverlay();
 
 		if (ShooterHUD->GetAnnouncement())
 		{
@@ -338,6 +343,18 @@ void AShooterPlayerController::UpdateHUD_Implementation()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (ShooterHUD) ShooterHUD->Update();
+}
+
+void AShooterPlayerController::RemoveHUD_Implementation()
+{
+	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
+	if (ShooterHUD) ShooterHUD->Remove();
+}
+
+void AShooterPlayerController::TogglePlayersListWidget_Implementation()
+{
+	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
+	if (ShooterHUD) ShooterHUD->TogglePlayersListWidget();
 }
 
 void AShooterPlayerController::RequestUpdateTimes_Implementation()

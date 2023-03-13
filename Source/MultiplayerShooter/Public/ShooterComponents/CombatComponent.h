@@ -19,7 +19,8 @@ public:
 	friend class AMainCharacter;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void UpdateCharacterSpeed();
 	FORCEINLINE float GetBaseWalkSpeed() const { return BaseWalkSpeed; }
 	FORCEINLINE void SetBaseWalkSpeed(float Speed) { BaseWalkSpeed = Speed; }
@@ -70,6 +71,9 @@ protected:
 	/* Aiming, animation */
 	void SetAiming(bool bIsAiming);
 
+	UFUNCTION(Server, Reliable)
+	void ServerSetAiming(bool bIsAiming);
+
 	/* Cross hair algorithm */
 	void TraceUnderCrosshairs(FHitResult& HitResult);
 
@@ -83,16 +87,18 @@ private:
 	UPROPERTY()
 	class AShooterHUD* ShooterHUD;
 
-	UPROPERTY()
+	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	class AWeapon* EquippedWeapon;
 
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
 
 	/**
 	 *	Aiming properties
 	 */
 
 	
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	bool bAiming;
 
 	UPROPERTY(EditAnywhere, Category = Movement)
@@ -126,6 +132,13 @@ private:
 	
 	void Fire();
 	void FireButtonPressed(bool bPressed);
+
+	UFUNCTION(Server, Reliable)
+	void ServerFire();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastFire();
+
 	bool CanFire() const;
 	void StartFireTimer();
 	void FireTimerFinished();

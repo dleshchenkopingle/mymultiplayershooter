@@ -18,15 +18,6 @@ void ALobbyHUD::AddLobbyWidget()
 
 		Update();
 		LobbyWidget->AddToViewport();
-
-		//UGameInstanceBase* GameInstance = Cast<UGameInstanceBase>(UGameplayStatics::GetGameInstance(GetWorld()));
-		//if (ensureMsgf(GameInstance, TEXT("ALobbyHUD::AddLobbyWidget - GameInstance is nullptr")))
-		//{
-		//	if (UMatchmakingManager* MatchmakingManager = GameInstance->GetMatchmakingManager())
-		//	{
-		//		MatchmakingManager->OnExecuteServerTravel.AddDynamic(this, &ALobbyHUD::OnServerTravelExecuted);
-		//	}
-		//}
 	}
 }
 
@@ -41,30 +32,17 @@ void ALobbyHUD::Update()
 {
 	if (!LobbyWidget) return;
 
-	LobbyWidget->ClearWidget();
-
-	if (ALobbyGameState* LobbyGameState = Cast<ALobbyGameState>(UGameplayStatics::GetGameState(this)))
+	if (AGameStateBase* GameState = UGameplayStatics::GetGameState(this))
 	{
-		auto PlayerArray = LobbyGameState->PlayerArray;
-		
+		LobbyWidget->ClearWidget();
+		auto PlayerArray = GameState->PlayerArray;
 		for (int32 i = 0; i < PlayerArray.Num(); ++i)
 		{
 			if (ALobbyPlayerState* LobbyPlayerState = Cast<ALobbyPlayerState>(PlayerArray[i]))
 			{
 				LobbyWidget->AppendPlayer(LobbyPlayerState);
 			}
-			else
-			{
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(
-						-1,
-						5.f,
-						FColor::Red,
-						FString::Printf(TEXT("Wrong Player State"))
-					);
-				}
-			}
+
 		}
 	}
 }
@@ -75,14 +53,3 @@ void ALobbyHUD::BeginPlay()
 
 	AddLobbyWidget();
 }
-
-//void ALobbyHUD::OnServerTravelExecuted(bool bWasSuccesful)
-//{
-//	if (bWasSuccesful)
-//	{
-//		if (LobbyWidget)
-//		{
-//			LobbyWidget->RemoveFromParent();
-//		}
-//	}
-//}

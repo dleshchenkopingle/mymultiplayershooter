@@ -9,6 +9,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "PlayerController/ShooterPlayerController.h"
 #include "PlayerState/ShooterPlayerState.h"
+#include "GameInstance/GameInstanceBase.h"
+#include "MatchmakingManager/MatchmakingManager.h"
+
 
 namespace MatchState
 {
@@ -25,6 +28,23 @@ void AShooterGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	LevelStartingTime = GetWorld()->GetTimeSeconds();
+
+	UGameInstanceBase* GameInstance = Cast<UGameInstanceBase>(UGameplayStatics::GetGameInstance(GetWorld()));
+	if (ensureMsgf(GameInstance, TEXT("AShooterGameMode::BeginPlay - GameInstance is nullptr")))
+	{
+		if (UMatchmakingManager* MatchmakingManager = GameInstance->GetMatchmakingManager())
+		{
+			MatchmakingManager->OnExecuteServerTravel.AddDynamic(this, &AShooterGameMode::OnServerTravelExecuted);
+		}
+	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(*It))
+		{
+			ShooterPlayerController->CheckMatchState();
+		}
+	}
 }
 
 void AShooterGameMode::Tick(float DeltaSeconds)
@@ -74,6 +94,25 @@ void AShooterGameMode::UpdatePlayersHUD()
 	}
 }
 
+void AShooterGameMode::RemovePlayersHUD()
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(*It))
+		{
+			ShooterPlayerController->RemoveHUD();
+		}
+	}
+}
+
+void AShooterGameMode::OnServerTravelExecuted(bool bWasSuccesful)
+{
+	if (bWasSuccesful)
+	{
+		RemovePlayersHUD();
+	}
+}
+
 void AShooterGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, AShooterPlayerController* VictimController, AShooterPlayerController* AttackerController)
 {
 	if (!EliminatedCharacter || !AttackerController || !VictimController) return;
@@ -111,4 +150,12 @@ void AShooterGameMode::RequestRespawn(AMainCharacter* EliminatedCharacter, ACont
 	const int32 PlayerStartIndex = FMath::RandRange(0, PlayerStarts.Num() - 1);
 
 	RestartPlayerAtPlayerStart(EliminatedController, PlayerStarts[PlayerStartIndex]);
+}
+
+void AShooterGameMode::RestartGame()
+{
+	if (UGameInstanceBase* GameInstance = Cast<UGameInstanceBase>(UGameplayStatics::GetGameInstance(GetWorld())))
+	{
+		GameInstance->StartMatch();
+	}
 }

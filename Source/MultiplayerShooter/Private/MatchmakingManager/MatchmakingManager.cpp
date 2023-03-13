@@ -15,12 +15,13 @@ void UMatchmakingManager::StartMatch()
 		else if (LevelsPathsArray.Num() == CurrentLevelNum)
 		{
 			CurrentLevelNum = 0;
-			TravelTo(PathOfLobby);
+			FString PathToTravel = PathOfLobby + "?listen";
+			TravelTo(PathToTravel);
 			return;
 		}
 
 		FString LevelToLoadPath = LevelsPathsArray[CurrentLevelNum++].GetLongPackageName();
-		//FString PathToTravel = LevelToLoadPath + "?listen";
+		FString PathToTravel = LevelToLoadPath + "?listen";
 		TravelTo(LevelToLoadPath);
 	}
 }
@@ -36,17 +37,11 @@ void UMatchmakingManager::ShuffleLevelsPathsArray()
 
 void UMatchmakingManager::TravelTo(FString Path)
 {
+	UE_LOG(LogTemp, Warning, TEXT("UMatchmakingManager::TravelTo - Path: %s"), *Path);
+
 	UWorld* World = GetWorld();
-	if (World && World->IsServer())
+	if (World && (World->IsNetMode(ENetMode::NM_ListenServer) || World->IsNetMode(ENetMode::NM_DedicatedServer)))
 	{
-		//TArray<FString> TravelOptions = { TEXT("bStartMatchWhenReady=1"), TEXT("bHasCharacterSelect=0"), FString::Printf(TEXT("GameVotingSelectionBehavior=%d"), (int32)GetGameVotingSelectionBehavior()), FString::Printf(TEXT("GamesToWin=%d"), GetGamesToWin()), FString::Printf(TEXT("PostGameLobbyLength=%f"), ActiveGameMode->GetPostGameLobbyLength()) };
-		//FURL TravelURL(*Path);
-
-		//for (const FString& Option : TravelOptions)
-		//{
-		//	TravelURL.AddOption(*Option);
-		//}
-
 		bool bSuccess = World->ServerTravel(Path, true);
 		if (OnExecuteServerTravel.IsBound())
 		{

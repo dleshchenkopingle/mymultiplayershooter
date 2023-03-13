@@ -14,6 +14,7 @@
 AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Mesh"));
 	SetRootComponent(WeaponMesh);
@@ -44,6 +45,13 @@ AWeapon::AWeapon()
 
 	CrosshairsMaxSpread = 64.f;
 	CrosshairsMinSpread = 5.f;
+}
+
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, WeaponState);
 }
 
 void AWeapon::BeginPlay()
@@ -160,6 +168,18 @@ void AWeapon::SetCustomDepth(const bool bEnabled)
 	}
 }
 
+void AWeapon::OnRep_WeaponState()
+{
+	HandleWeaponState();
+
+	//switch (WeaponState)
+	//{
+	//case EWeaponState::EWS_Equipped:
+	//	ShowPickupWidget(false);
+
+	//}
+}
+
 void AWeapon::HandleWeaponState()
 {
 	// Change the weapon's pickup widget in Server World to be invisible 
@@ -191,7 +211,8 @@ void AWeapon::HandleWeaponState()
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		
 		// Set physics simulation, be aware of the sequence.
-		WeaponMesh->SetSimulatePhysics(true);
+		//WeaponMesh->SetSimulatePhysics(true);
+		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 

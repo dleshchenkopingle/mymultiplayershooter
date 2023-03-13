@@ -49,6 +49,14 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	
 }
 
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, bAiming);
+}
+
 void UCombatComponent::UpdateCharacterSpeed()
 {
 	if (MainCharacter && MainCharacter->GetCharacterMovement())
@@ -129,12 +137,21 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 	{
 		MainCharacter->ShowSniperScopeWidget(bIsAiming);
 	}
+
+	if (!MainCharacter->HasAuthority())
+	{
+		ServerSetAiming(bIsAiming);
+	}
+}
+
+void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+{
+	bAiming = bIsAiming;
+	UpdateCharacterSpeed();
 }
 
 void UCombatComponent::Fire()
 {
-	// Be aware that sequence is important, because when we fire out the last ammo, the ammo will be 0
-	// and reload will be executed immediately.
 	if (EquippedWeapon && EquippedWeapon->IsAmmoEmpty())
 	{
 		Reload();
@@ -149,6 +166,39 @@ void UCombatComponent::Fire()
 
 		StartFireTimer();
 	}
+}
+
+void UCombatComponent::ServerFire_Implementation()
+{
+	// Be aware that sequence is important, because when we fire out the last ammo, the ammo will be 0
+	// and reload will be executed immediately.
+	//MulticastFire();
+}
+
+void UCombatComponent::MulticastFire_Implementation()
+{
+	if (!MainCharacter || !EquippedWeapon)
+	{
+		return;
+	}
+
+	MainCharacter->PlayFireMontage(bAiming);
+	EquippedWeapon->Fire(HitTarget);
+
+	//if (EquippedWeapon && EquippedWeapon->IsAmmoEmpty())
+	//{
+	//	Reload();
+	//}
+	//if (CanFire())
+	//{
+	//	if (!MainCharacter || !EquippedWeapon || CombatState != ECombatState::ECS_Unoccupied) return;
+
+		AimFactor += EquippedWeapon->GetRecoilFactor();
+	//	MainCharacter->PlayFireMontage(bAiming);
+	//	EquippedWeapon->Fire(HitTarget);
+
+	//	//StartFireTimer();
+	//}
 }
 
 void UCombatComponent::FireButtonPressed(bool bPressed)
@@ -512,6 +562,15 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& HitResult)
 		}
 	}
 	HitTarget = HitResult.ImpactPoint;
+}
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (MainCharacter && EquippedWeapon)
+	{
+		MainCharacter->GetCharacterMovement()->bOrientRotationToMovement = false;
+		MainCharacter->bUseControllerRotationYaw = true;
+	}
 }
 
 void UCombatComponent::UpdateHUDCrosshairs(float DeltaTime)

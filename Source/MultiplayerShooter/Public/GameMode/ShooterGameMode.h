@@ -31,6 +31,10 @@ protected:
 	virtual void OnMatchStateSet() override;
 
 	void UpdatePlayersHUD();
+	void RemovePlayersHUD();
+
+	UFUNCTION()
+	void OnServerTravelExecuted(bool bWasSuccesful);
 	
 private:
 	/** The time cost for entering the map */
@@ -38,18 +42,18 @@ private:
 	
 	/** Warmup time before starting the game */
 	UPROPERTY(EditDefaultsOnly, Category = Match)
-	float WarmupTime = 10.f;
+	float WarmupTime = 3.f;
 
 	/** Match time when MatchState is InProgress */
 	UPROPERTY(EditDefaultsOnly, Category = Match)
-	float MatchTime = 10.f;
+	float MatchTime = 90.f;
 
 	/** Cooldown time when MatchState is InProgress and the match countdown has finished */
 	UPROPERTY(EditDefaultsOnly, Category = Match)
-	float CooldownTime = 10.f;
+	float CooldownTime = 3.f;
 
 	/** Countdown time since the players have entered the map */
-	float CountdownTime = 10.f;
+	float CountdownTime = 3.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Match)
 	int32 MaxBotsCount = 0;
@@ -65,4 +69,7 @@ public:
 	FORCEINLINE float GetWarmupTime() const { return WarmupTime; }
 	FORCEINLINE float GetMatchTime() const { return MatchTime; }
 	FORCEINLINE float GetCooldownTime() const { return CooldownTime; }
+
+private:
+	virtual void RestartGame() override;
 };
