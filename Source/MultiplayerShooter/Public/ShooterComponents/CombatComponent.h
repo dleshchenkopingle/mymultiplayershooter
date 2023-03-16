@@ -49,6 +49,8 @@ public:
 	/* Reload Animation Notify, we call it directly in AnimNotifyReload.cpp */
 	void ReloadAnimNotify();
 	void Reload();
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 
 	/* Reload the shotgun AnimNotify. */
 	UFUNCTION(BlueprintCallable)
@@ -76,6 +78,13 @@ protected:
 
 	/* Cross hair algorithm */
 	void TraceUnderCrosshairs(FHitResult& HitResult);
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	void HandleReload();
+
+	int32 AmountToReload();
 
 private:
 	UPROPERTY()
@@ -119,8 +128,11 @@ private:
 	 */
 
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	ECombatState CombatState;
+	UPROPERTY(ReplicatedUsing = OnRep_CombatState, EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
 
 	void HandleCombatState();
 
@@ -130,14 +142,13 @@ private:
 	 */
 
 	
-	void Fire();
 	void FireButtonPressed(bool bPressed);
 
 	UFUNCTION(Server, Reliable)
-	void ServerFire();
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastFire();
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
 	bool CanFire() const;
 	void StartFireTimer();
@@ -206,14 +217,23 @@ private:
 	void InitCarriedAmmoMap();
 	void SetHUDWeaponType();
 	void ReloadAmmoAmount();
+	void UpdateAmmoValues();
 	
 	/* Carried Ammo, right part of xxx/xxx, which means the total ammo except for the part in the clip. */
-	UPROPERTY(EditAnywhere, Category = Ammo)
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo, EditAnywhere, Category = Ammo)
 	int32 CarriedAmmo = 0;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
 
 	UPROPERTY(EditAnywhere, Category = Ammo)
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponType)
+	EWeaponType CarriedWeaponType = EWeaponType::EWT_MAX;
+
+	UFUNCTION()
+	void OnRep_WeaponType();
 	
 	/* 
 	 *	Throw Grenade

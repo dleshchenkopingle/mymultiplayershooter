@@ -31,7 +31,10 @@ public:
 	void UpdatePlayerScore(float Value);
 	void UpdatePlayerDefeats(int32 Value);
 	/** Display the text when player is eliminated */
+	UFUNCTION(Client, Reliable)
 	void DisplayDefeatedMsg();
+	UFUNCTION(Client, Reliable)
+	void HideDefeatedMsg();
 	void UpdateWeaponAmmo(int32 AmmoAmount);
 	void UpdateCarriedAmmo(int32 AmmoAmount);
 	void UpdateWeaponType(const FString& WeaponType);

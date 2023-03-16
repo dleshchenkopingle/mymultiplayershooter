@@ -4,7 +4,6 @@
 #include "GameMode/ShooterGameMode.h"
 #include "Character/MainCharacter.h"
 #include "GameFramework/PlayerStart.h"
-#include "GameFramework/PlayerState.h"
 #include "GameState/ShooterGameState.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerController/ShooterPlayerController.h"
@@ -117,6 +116,8 @@ void AShooterGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, ASh
 {
 	if (!EliminatedCharacter || !AttackerController || !VictimController) return;
 
+	EliminatedCharacter->Eliminated();
+
 	AShooterPlayerState* AttackerPlayerState = AttackerController->GetPlayerState<AShooterPlayerState>();
 	AShooterPlayerState* VictimPlayerState = VictimController->GetPlayerState<AShooterPlayerState>();
 	if (!AttackerPlayerState || !VictimPlayerState) return;
@@ -127,7 +128,6 @@ void AShooterGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, ASh
 		AttackerPlayerState->UpdateScore();
 		VictimPlayerState->UpdateDefeats();
 	}
-	EliminatedCharacter->Eliminated();
 
 	AShooterGameState* ShooterGameState = GetGameState<AShooterGameState>();
 	if (!ShooterGameState) return;

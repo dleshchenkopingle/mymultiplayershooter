@@ -52,6 +52,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 void AWeapon::BeginPlay()
@@ -116,6 +117,11 @@ void AWeapon::SetAmmo(const int32 Amount)
 	HandleAmmo();
 }
 
+void AWeapon::OnRep_Ammo()
+{
+	SetHUDAmmo();
+}
+
 void AWeapon::HandleAmmo()
 {
 	SetHUDAmmo();
@@ -171,13 +177,6 @@ void AWeapon::SetCustomDepth(const bool bEnabled)
 void AWeapon::OnRep_WeaponState()
 {
 	HandleWeaponState();
-
-	//switch (WeaponState)
-	//{
-	//case EWeaponState::EWS_Equipped:
-	//	ShowPickupWidget(false);
-
-	//}
 }
 
 void AWeapon::HandleWeaponState()
@@ -187,7 +186,6 @@ void AWeapon::HandleWeaponState()
 	{
 	case EWeaponState::EWS_Equipped:
 		ShowPickupWidget(false);
-		
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		// If weapon type is SMG, we just disable the physics simulation of the weapon mesh because physics simulation is incompatible with attaching actor behavior.
@@ -209,10 +207,10 @@ void AWeapon::HandleWeaponState()
 		
 	case EWeaponState::EWS_Dropped:
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		
+		ShowPickupWidget(false);
+
 		// Set physics simulation, be aware of the sequence.
-		//WeaponMesh->SetSimulatePhysics(true);
-		WeaponMesh->SetSimulatePhysics(false);
+		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
@@ -242,4 +240,9 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	{
 		MainCharacter->SetOverlappingWeapon(nullptr); 
 	}
+}
+
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, ClipSize);
 }

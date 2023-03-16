@@ -11,6 +11,11 @@ void AWeaponProjectile::Fire(const FVector& TraceHitTarget)
 	// Common game logic (weapon functionality)
 	// Call the code in the parent's function. It's something like clone the parent's code here.
 	Super::Fire(TraceHitTarget);
+
+	if (!HasAuthority())
+	{
+		return;
+	}
 	
 	// Respective game logic (weapon functionality)
 	FireProjectile(TraceHitTarget);

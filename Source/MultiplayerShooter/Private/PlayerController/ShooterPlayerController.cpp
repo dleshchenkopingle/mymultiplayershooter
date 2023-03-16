@@ -51,9 +51,11 @@ void AShooterPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	
+	HideDefeatedMsg();
 	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(InPawn))
 	{
 		MainCharacter->SetIsRespawned();
+		UpdatePlayerHealth(MainCharacter->GetHealth(), MainCharacter->GetMaxHealth());
 	}
 }
 
@@ -97,7 +99,7 @@ void AShooterPlayerController::UpdatePlayerDefeats(int32 Value)
 	ShooterHUD->GetCharacterOverlay()->Defeats->SetText(FText::FromString(DefeatsText));
 }
 
-void AShooterPlayerController::DisplayDefeatedMsg()
+void AShooterPlayerController::DisplayDefeatedMsg_Implementation()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (!ShooterHUD || !ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetCharacterOverlay()->DefeatedMsg ||
@@ -106,6 +108,15 @@ void AShooterPlayerController::DisplayDefeatedMsg()
 	UCharacterOverlay* CharacterOverlay = ShooterHUD->GetCharacterOverlay();
 	CharacterOverlay->DefeatedMsg->SetVisibility(ESlateVisibility::Visible);
 	CharacterOverlay->PlayAnimation(CharacterOverlay->DefeatedMsgAnim);
+}
+
+void AShooterPlayerController::HideDefeatedMsg_Implementation()
+{
+	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
+	if (!ShooterHUD || !ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetCharacterOverlay()->DefeatedMsg) return;
+
+	UCharacterOverlay* CharacterOverlay = ShooterHUD->GetCharacterOverlay();
+	CharacterOverlay->DefeatedMsg->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void AShooterPlayerController::UpdateWeaponAmmo(int32 AmmoAmount)
@@ -280,8 +291,6 @@ void AShooterPlayerController::HandleMatchState_Implementation()
 
 	if (MatchState == MatchState::InProgress)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::HandleMatchState_Implementation 0"));
-
 		ShooterHUD->AddCharacterOverlay();
 
 		if (ShooterHUD->GetAnnouncement())

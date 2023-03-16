@@ -129,8 +129,11 @@ private:
 	bool CanSemiAutoFire = true;
 
 	/* Current ammo amount */
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_Ammo, EditAnywhere, Category = "Weapon Properties")
 	int32 Ammo = 30;
+
+	UFUNCTION()
+	void OnRep_Ammo();
 
 	/* Update ammo amount, HUD */
 	void HandleAmmo();
@@ -167,6 +170,7 @@ public:
 	FORCEINLINE bool IsAmmoValid() const { return Ammo >=0 && ClipSize >= 0 && Ammo <= ClipSize; }
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 	FORCEINLINE void SetWeaponType(const EWeaponType Type) { WeaponType = Type; }
+	void AddAmmo(int32 AmmoToAdd);
 
 	/**
 	* Textures for the weapon cross hairs

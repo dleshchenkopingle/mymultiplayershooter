@@ -50,6 +50,7 @@ private:
 	void ToggleReadyPressed();
 	void ShowOverheadWidget();
 	void TogglePlayersListWidgetPressed();
+	void UpdateHUDHealth();
 
 	UFUNCTION()
 	void OnRep_OverlappingWeapon();
@@ -59,6 +60,10 @@ public:
 	void PlayFireMontage(bool bAiming) const;
 	void PlayReloadMontage() const;
 	void PlayThrowGrenadeMontage() const;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastElim();
+
 	void Eliminated();
 
 	/* Display the sniper scope effect when aiming. */
@@ -136,14 +141,21 @@ private:
 	UPROPERTY(EditAnywhere, Category = PlayerStats)
 	float MaxHealth = 100.f;
 	
-	UPROPERTY(VisibleAnywhere, Category = PlayerStats)
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = PlayerStats)
 	float Health = 100.f;
+
+	UFUNCTION()
+	void OnRep_Health();
+
+	bool bIsElimmed = false;
 
 	UPROPERTY(VisibleAnywhere, Category = PlayerStats)
 	bool IsRespawned = false;
 
+	//ElimTimer
 	FTimerHandle RespawnTimer;
 
+	//ElimDelay
 	UPROPERTY(EditAnywhere, Category = PlayerStats)
 	float TimerDelay = 3.f;
 	
@@ -152,7 +164,6 @@ private:
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
-	void SetHUDHealth();
 	void PlayHitReactMontage() const;
 	void PlayDeathHipMontage() const;
 	void PlayDeathIronMontage() const;
@@ -171,7 +182,7 @@ private:
 	FOnTimelineFloat DissolveTrack;
 	
 	UFUNCTION()
-	void UpdateMaterial(float CurveValue);
+	void UpdateDissolveMaterial(float CurveValue);
 
 	void StartDissolve();
 
@@ -216,6 +227,7 @@ public:
 	
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
+	FORCEINLINE bool GetIsElimmed() const { return bIsElimmed; }
 	FORCEINLINE FTransform GetLeftHandTransform() const { return LeftHandTransform; }
 	FORCEINLINE FRotator GetRightHandRotation() const { return RightHandRotation; }
 	FORCEINLINE ETurningInPlace GetTuringInPlace() const { return TurningInPlace; }

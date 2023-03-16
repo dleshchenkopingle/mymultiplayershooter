@@ -14,6 +14,7 @@
 AProjectile::AProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 	
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Collision Box"));
 	SetRootComponent(CollisionBox);
@@ -60,7 +61,11 @@ void AProjectile::BeginPlay()
 			(USoundConcurrency*)nullptr
 		);
 	}
-	CollisionBox->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+
+	if (HasAuthority())
+	{
+		CollisionBox->OnComponentHit.AddDynamic(this, &ThisClass::OnHit);
+	}
 
 	// This implementation works fine here, but Stephen said sometimes it fails.
 	// CollisionBox->IgnoreActorWhenMoving(GetOwner(), true);

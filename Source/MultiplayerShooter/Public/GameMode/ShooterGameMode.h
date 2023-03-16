@@ -46,7 +46,7 @@ private:
 
 	/** Match time when MatchState is InProgress */
 	UPROPERTY(EditDefaultsOnly, Category = Match)
-	float MatchTime = 90.f;
+	float MatchTime = 900.f;
 
 	/** Cooldown time when MatchState is InProgress and the match countdown has finished */
 	UPROPERTY(EditDefaultsOnly, Category = Match)

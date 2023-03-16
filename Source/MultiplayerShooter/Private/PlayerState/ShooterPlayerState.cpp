@@ -4,6 +4,15 @@
 #include "PlayerState/ShooterPlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "PlayerController/ShooterPlayerController.h"
+#include "Character/MainCharacter.h"
+
+
+void AShooterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AShooterPlayerState, Defeats);
+}
 
 void AShooterPlayerState::UpdateScore()
 {
@@ -25,3 +34,25 @@ void AShooterPlayerState::UpdateDefeats()
 	ShooterPlayerController->UpdatePlayerDefeats(Defeats);
 }
 
+void AShooterPlayerState::OnRep_Score()
+{
+	Super::OnRep_Score();
+
+	Character = Character ? Character : Cast<AMainCharacter>(GetPawn());
+	if (Character)
+	{
+		ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetOwningController());
+		if (ShooterPlayerController)
+		{
+			ShooterPlayerController->UpdatePlayerScore(Score);
+		}
+	}
+}
+
+void AShooterPlayerState::OnRep_Defeats()
+{
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetOwningController());
+	if (!ShooterPlayerController) return;
+
+	ShooterPlayerController->UpdatePlayerDefeats(Defeats);
+}

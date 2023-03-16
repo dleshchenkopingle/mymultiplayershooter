@@ -65,5 +65,6 @@
  	bUseFABRIK = MainCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
  	bUseAimOffset = MainCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
  	bTransformRightHand = MainCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
+	bIsElimmed = MainCharacter->GetIsElimmed();
  }
 

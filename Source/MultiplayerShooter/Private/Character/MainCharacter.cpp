@@ -74,10 +74,15 @@ AMainCharacter::AMainCharacter()
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UpdateHUDHealth();
 	
 	LastAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 	GrenadeAttached->SetVisibility(false);
-	OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
+	}
 }
 
 void AMainCharacter::Tick(float DeltaTime)
@@ -211,6 +216,23 @@ void AMainCharacter::HideCharacterIfClose()
 	Combat->EquippedWeapon->GetWeaponMesh()->SetVisibility(!bHideWeapon);
 }
 
+void AMainCharacter::OnRep_Health()
+{
+	UpdateHUDHealth();
+}
+
+void AMainCharacter::MulticastElim_Implementation()
+{
+	if (ShooterPlayerController)
+	{
+		ShooterPlayerController->UpdateWeaponAmmo(0);
+	}
+
+	bIsElimmed = true;
+	IsAiming() ? PlayDeathIronMontage() : PlayDeathHipMontage();
+	StartDissolve();
+}
+
 void AMainCharacter::Eliminated()
 {
 	if (Combat && Combat->EquippedWeapon)
@@ -240,9 +262,8 @@ void AMainCharacter::Eliminated()
 		// We need to make sure bFireButtonPressed is cleared or the weapon will keep firing because the input is disabled
 		FireButtonReleased();
 	}
-	IsAiming() ? PlayDeathIronMontage() : PlayDeathHipMontage();
+	MulticastElim();
 
-	StartDissolve();
 	PlayElimBotEffect();
 
 	OverheadWidget->DestroyComponent(true);
@@ -265,6 +286,7 @@ void AMainCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDa
 	if (Health <= 0.f) return;
 	
 	SetHealth(FMath::Clamp(Health - Damage, 0.f, MaxHealth));
+	UpdateHUDHealth();
 	if (Health <= 0.f && GetWorld())
 	{
 		if (AShooterGameMode* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameMode>())
@@ -274,14 +296,6 @@ void AMainCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDa
 			ShooterGameMode->PlayerEliminated(this, ShooterPlayerController, AttackerController);
 		}
 	}
-}
-
-void AMainCharacter::SetHUDHealth()
-{
-	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(Controller);
-	if (!ShooterPlayerController) return;
-
-	ShooterPlayerController->UpdatePlayerHealth(Health, MaxHealth);
 }
 
 void AMainCharacter::PlayHitReactMontage() const
@@ -301,7 +315,8 @@ void AMainCharacter::PlayHitReactMontage() const
 void AMainCharacter::PlayDeathHipMontage() const
 {
 	// The montage is played only when the character is holding a weapon.
-	if (!Combat || !Combat->EquippedWeapon) return;
+	//if (!Combat || !Combat->EquippedWeapon) return;
+	if (!Combat) return;
 	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && DeathHipMontage)
@@ -377,7 +392,7 @@ void AMainCharacter::PlayThrowGrenadeMontage() const
 	}
 }
 
-void AMainCharacter::UpdateMaterial(float CurveValue)
+void AMainCharacter::UpdateDissolveMaterial(float CurveValue)
 {
 	if (!DynamicDissolveMatInst) return;
 	DynamicDissolveMatInst->SetScalarParameterValue(FName("Dissolve"), CurveValue);
@@ -396,7 +411,7 @@ void AMainCharacter::StartDissolve()
 	DynamicDissolveMatInst->SetScalarParameterValue(FName("Glow"), 200.f);
 
 	// Initialize the timeline component.
-	//DissolveTrack.BindDynamic(this, &ThisClass::UpdateMaterial);
+	DissolveTrack.BindDynamic(this, &ThisClass::UpdateDissolveMaterial);
 	TimelineComponent->AddInterpFloat(DissolveCurve, DissolveTrack);
 	TimelineComponent->Play();
 }
@@ -445,6 +460,7 @@ void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(AMainCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(AMainCharacter, Health);
 }
 
 void AMainCharacter::MoveForward(float Value)
@@ -590,11 +606,18 @@ void AMainCharacter::ToggleReadyPressed()
 
 void AMainCharacter::ShowOverheadWidget()
 {
-	if (ensure(OverheadWidget))
+	if (OverheadWidget)
 	{
 		if (UOverheadWidget* CurrentOverheadWidget = Cast<UOverheadWidget>(OverheadWidget->GetWidget()))
 		{
-			CurrentOverheadWidget->ShowPlayerName(this);
+			if (bIsElimmed)
+			{
+				CurrentOverheadWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
+			else
+			{
+				CurrentOverheadWidget->ShowPlayerName(this);
+			}
 		}
 	}
 }
@@ -605,6 +628,15 @@ void AMainCharacter::TogglePlayersListWidgetPressed()
 	if (ShooterPlayerController)
 	{
 		ShooterPlayerController->TogglePlayersListWidget();
+	}
+}
+
+void AMainCharacter::UpdateHUDHealth()
+{
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(Controller);
+	if (ShooterPlayerController)
+	{
+		ShooterPlayerController->UpdatePlayerHealth(Health, MaxHealth);
 	}
 }
 
@@ -690,7 +722,7 @@ void AMainCharacter::SetHealth(const float HealthValue)
 
 void AMainCharacter::HandleHealth(const bool IsHealthUp)
 {
-	SetHUDHealth();
+	UpdateHUDHealth();
 
 	if (IsHealthUp) {}
 	else

@@ -18,10 +18,16 @@ void AProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 {
 	// The Owner/Instigator is set in SpawnParams when we spawn the projectile
 	const APawn* ProjectileInstigator = GetInstigator();
-	if (!ProjectileInstigator) return;
+	if (!ProjectileInstigator)
+	{
+		return;
+	}
 
 	// If we hit ourselves, it'll not trigger the HitImpact.
-	if (OtherActor == GetOwner()) return;
+	if (OtherActor == GetOwner())
+	{
+		return;
+	}
 
 	// ApplyDamage logic
 	UGameplayStatics::ApplyDamage(OtherActor, Damage, ProjectileInstigator->GetController(), this, UDamageType::StaticClass());
