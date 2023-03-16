@@ -91,6 +91,8 @@ void AShooterHUD::Update()
 	if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(GetOwningPlayerController()))
 	{
 		ShooterPlayerController->SetHUDTime();
+		ShooterPlayerController->UpdateTopScore();
+		ShooterPlayerController->UpdateTopScorePlayer();
 	}
 
 	if (PlayersListWidget && PlayersListWidget->GetIsVisible())

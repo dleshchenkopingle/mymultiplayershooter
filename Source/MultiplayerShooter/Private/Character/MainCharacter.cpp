@@ -78,7 +78,11 @@ void AMainCharacter::BeginPlay()
 	UpdateHUDHealth();
 	
 	LastAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
-	GrenadeAttached->SetVisibility(false);
+	if (GrenadeAttached)
+	{
+		GrenadeAttached->SetVisibility(false);
+	}
+
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ThisClass::ReceiveDamage);
@@ -743,7 +747,7 @@ void AMainCharacter::HandleIsRespawned()
 	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetController());
 	if (ShooterPlayerController)
 	{
-		ShooterPlayerController->UpdateHUD();
+		//ShooterPlayerController->UpdateHUD();
 	}
 }
 

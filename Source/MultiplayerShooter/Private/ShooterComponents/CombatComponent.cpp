@@ -62,6 +62,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedWeaponType, COND_OwnerOnly);
+	DOREPLIFETIME(UCombatComponent, Grenade);
 }
 
 void UCombatComponent::UpdateCharacterSpeed()
@@ -338,7 +339,7 @@ void UCombatComponent::ReloadAnimNotify()
 
 void UCombatComponent::ShotgunShellAnimNotify()
 {
-	if (MainCharacter)
+	if (MainCharacter && MainCharacter->HasAuthority())
 	{
 		if (!EquippedWeapon || !MainCharacter->GetMesh()) return;
 
@@ -368,16 +369,15 @@ void UCombatComponent::ThrowGrenadeAnimNotify()
 	if (MainCharacter)
 	{
 		SetCombatState(ECombatState::ECS_Unoccupied);
-
 		AttachWeaponToRightHand();
 	}
 }
 
 void UCombatComponent::LaunchGrenadeAnimNotify()
 {
-	if (MainCharacter && MainCharacter->IsLocallyControlled())
+	if (MainCharacter && MainCharacter->IsLocallyControlled() && GrenadeClass && MainCharacter->GetGrenadeAttached())
 	{
-		LaunchGrenade(HitTarget);
+		ServerLaunchGrenade(HitTarget);
 	}
 	// Hide the grenade mesh on all machine.
 	ShowGrenadeAttached(false);
@@ -391,45 +391,12 @@ void UCombatComponent::Reload()
 	ServerReload();
 }
 
-void UCombatComponent::FinishReloading()
-{
-	//if (!MainCharacter)
-	//{
-	//	return;
-	//}
-
-	//if (MainCharacter->HasAuthority())
-	//{
-	//	CombatState = ECombatState::ECS_Unoccupied;
-	//	ReloadAmmoAmount();
-	//	//UpdateAmmoValues();
-	//}
-
-	//if (bFireButtonPressed)
-	//{
-	//	ServerFire(HitTarget);
-	//}
-}
-
 void UCombatComponent::ServerReload_Implementation()
 {
 	if (!MainCharacter || !EquippedWeapon)
 	{
 		return;
 	}
-
-	//int32 ReloadAmount = AmountToReload();
-	//if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
-	//{
-	//	CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
-	//	CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
-	//}
-	//ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->Controller);
-	//if (ShooterPlayerController)
-	//{
-	//	ShooterPlayerController->UpdateCarriedAmmo(CarriedAmmo);
-	//}
-	//EquippedWeapon->AddAmmo(-ReloadAmount);
 
 	CombatState = ECombatState::ECS_Reloading;
 	HandleReload();
@@ -524,19 +491,57 @@ void UCombatComponent::ThrowGrenade()
 {
 	if (!MainCharacter || CombatState != ECombatState::ECS_Unoccupied || IsGrenadeEmpty()) return;
 
+	if (!MainCharacter->HasAuthority())
+	{
+		ServerThrowGrenade();
+	}
+
+	if (MainCharacter->HasAuthority())
+	{
+		SetGrenadeAmount(Grenade - 1);
+		ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->GetController());
+		if (ShooterPlayerController)
+		{
+			ShooterPlayerController->UpdateGrenade(Grenade);
+		}
+	}
+
+	SetCombatState(ECombatState::ECS_Throwing);
+
+	AttachWeaponToLeftHand();
+	MainCharacter->PlayThrowGrenadeMontage();
+	ShowGrenadeAttached(true);
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	if (!MainCharacter || CombatState != ECombatState::ECS_Unoccupied || IsGrenadeEmpty()) return;
+
 	SetCombatState(ECombatState::ECS_Throwing);
 	SetGrenadeAmount(Grenade - 1);
 
-	AttachWeaponToLeftHand();
-
 	MainCharacter->PlayThrowGrenadeMontage();
+	ShowGrenadeAttached(true);
+
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->GetController());
+	if (ShooterPlayerController)
+	{
+		ShooterPlayerController->UpdateGrenade(Grenade);
+	}
 }
 
-void UCombatComponent::LaunchGrenade(const FVector_NetQuantize& Target)
+//void UCombatComponent::LaunchGrenade(const FVector_NetQuantize& Target)
+//{
+//	if (MainCharacter && MainCharacter->IsLocallyControlled())
+//	{
+//		ServerLaunchGrenade(Target);
+//	}
+//}
+
+void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
 {
 	if (!MainCharacter || !MainCharacter->GetMesh()) return;
-	
-	// Spawn and launch grenade.
+
 	if (const UStaticMeshComponent* GrenadeMesh = MainCharacter->GetGrenadeAttached())
 	{
 		const FVector Dir = Target - GrenadeMesh->GetComponentLocation();
@@ -545,22 +550,21 @@ void UCombatComponent::LaunchGrenade(const FVector_NetQuantize& Target)
 		// original location to avoid collision.
 		constexpr float SafeDist = 50.f;
 		const FVector SpawnLocation = GrenadeMesh->GetComponentLocation() + Dir.GetSafeNormal() * SafeDist;
-		
+
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = MainCharacter;
 		SpawnParams.Instigator = MainCharacter;
 		if (UWorld* World = GetWorld())
 		{
 			World->SpawnActor<AProjectile>(
-				ProjectileClass,
+				GrenadeClass,
 				SpawnLocation,
 				Dir.Rotation(),
 				SpawnParams
-			);
+				);
 		}
 	}
 }
-
 
 void UCombatComponent::AttachWeaponToLeftHand()
 {
@@ -593,13 +597,13 @@ void UCombatComponent::SetGrenadeAmount(int32 Amount)
 {
 	Grenade = FMath::Clamp(Amount, 0, MaxGrenade);
 
-	HandleGrenadeRep();
+	//HandleGrenadeRep();
 }
 
-void UCombatComponent::HandleGrenadeRep()
+void UCombatComponent::OnRep_Grenade()
 {
-	if (!MainCharacter || !MainCharacter->IsLocallyControlled()) return;
-	
+	if (!MainCharacter) return;
+
 	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->GetController());
 	if (ShooterPlayerController)
 	{
@@ -623,8 +627,12 @@ void UCombatComponent::HandleCombatState()
 		HandleReload();
 		break;
 	case ECombatState::ECS_Throwing:
-		MainCharacter->PlayThrowGrenadeMontage();
-		ShowGrenadeAttached(true);
+		if (!MainCharacter->IsLocallyControlled())
+		{
+			AttachWeaponToLeftHand();
+			MainCharacter->PlayThrowGrenadeMontage();
+			ShowGrenadeAttached(true);
+		}
 		break;
 	case ECombatState::ECS_MAX:
 		break;

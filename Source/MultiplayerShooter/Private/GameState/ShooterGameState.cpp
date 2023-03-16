@@ -9,6 +9,14 @@
 #include "PlayerController/ShooterPlayerController.h"
 #include "PlayerState/ShooterPlayerState.h"
 
+void AShooterGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AShooterGameState, TopScorePlayerStates);
+	DOREPLIFETIME(AShooterGameState, TopScore);
+}
+
 void AShooterGameState::UpdateTopScorePlayerStates(AShooterPlayerState* PlayerState)
 {
 	if (!PlayerState) return;

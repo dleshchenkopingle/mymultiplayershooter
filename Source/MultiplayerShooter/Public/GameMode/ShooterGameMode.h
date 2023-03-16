@@ -30,7 +30,7 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnMatchStateSet() override;
 
-	void UpdatePlayersHUD();
+	//void UpdatePlayersHUD();
 	void RemovePlayersHUD();
 
 	UFUNCTION()
@@ -46,7 +46,7 @@ private:
 
 	/** Match time when MatchState is InProgress */
 	UPROPERTY(EditDefaultsOnly, Category = Match)
-	float MatchTime = 900.f;
+	float MatchTime = 10.f;
 
 	/** Cooldown time when MatchState is InProgress and the match countdown has finished */
 	UPROPERTY(EditDefaultsOnly, Category = Match)

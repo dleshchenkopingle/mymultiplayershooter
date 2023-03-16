@@ -1,11 +1,12 @@
  // Fill out your copyright notice in the Description page of Project Settings.
 
 
- #include "Character/ShooterAnimInstance.h"
- #include "Character/MainCharacter.h"
- #include "GameFramework/CharacterMovementComponent.h"
- #include "Kismet/KismetMathLibrary.h"
+#include "Character/ShooterAnimInstance.h"
+#include "Character/MainCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Weapon/Weapon.h"
+#include "ShooterComponents/CombatComponent.h"
 
  void UShooterAnimInstance::NativeInitializeAnimation()
  {
@@ -57,9 +58,7 @@
  	AO_Pitch = MainCharacter->GetAO_Pitch();
 
  	LeftHandTransform = MainCharacter->GetLeftHandTransform();
-
  	TurningInPlace = MainCharacter->GetTuringInPlace();
-
  	RightHandRotation = MainCharacter->GetRightHandRotation();
 
  	bUseFABRIK = MainCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;

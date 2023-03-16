@@ -3,6 +3,8 @@
 
 #include "PlayerState/LobbyPlayerState.h"
 #include "PlayerController/LobbyPlayerController.h"
+#include "Net/UnrealNetwork.h"
+
 
 void ALobbyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

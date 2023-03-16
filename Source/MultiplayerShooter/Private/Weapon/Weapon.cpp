@@ -120,6 +120,12 @@ void AWeapon::SetAmmo(const int32 Amount)
 void AWeapon::OnRep_Ammo()
 {
 	SetHUDAmmo();
+
+	WeaponOwnerCharacter = WeaponOwnerCharacter ? WeaponOwnerCharacter : Cast<AMainCharacter>(GetOwner());
+	if (WeaponOwnerCharacter->GetCombat() && WeaponType == EWeaponType::EWT_Shotgun && IsAmmoFull())
+	{
+		WeaponOwnerCharacter->GetCombat()->JumpToShotgunEnd();
+	}
 }
 
 void AWeapon::HandleAmmo()

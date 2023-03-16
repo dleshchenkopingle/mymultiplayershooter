@@ -59,13 +59,13 @@ public:
 	UFUNCTION(Client, Reliable)
 	void OnMatchStateSet(FName State);
 
-	UFUNCTION(Client, Reliable)
+	//UFUNCTION(Client, Reliable)
 	void UpdateHUD();
 
 	UFUNCTION(Client, Reliable)
 	void RemoveHUD();
 
-	UFUNCTION(Client, Reliable)
+	//UFUNCTION(Client, Reliable)
 	void TogglePlayersListWidget();
 
 	UFUNCTION(Server, Reliable)

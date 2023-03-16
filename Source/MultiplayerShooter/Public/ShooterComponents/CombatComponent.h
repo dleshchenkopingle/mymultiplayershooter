@@ -49,8 +49,6 @@ public:
 	/* Reload Animation Notify, we call it directly in AnimNotifyReload.cpp */
 	void ReloadAnimNotify();
 	void Reload();
-	UFUNCTION(BlueprintCallable)
-	void FinishReloading();
 
 	/* Reload the shotgun AnimNotify. */
 	UFUNCTION(BlueprintCallable)
@@ -241,26 +239,38 @@ private:
 
 	
 	void ThrowGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UPROPERTY(EditAnywhere, Category = TSubclass)
+	TSubclassOf<AProjectile> GrenadeClass;
 	
 	/* Attach the weapon to hand when throwing the grenade */
 	void AttachWeaponToLeftHand();
 	void AttachWeaponToRightHand();
 
 	/* Used to transmit the local variable -- HitTarget */
-	UFUNCTION()
-	void LaunchGrenade(const FVector_NetQuantize& Target);
+	//UFUNCTION()
+	//void LaunchGrenade(const FVector_NetQuantize& Target);
+
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 
 	/* Show the grenade when throwing and hide the grenade when launching it. */
 	void ShowGrenadeAttached(bool IsVisible);
 
 	/* Projectile class, grenade */
-	UPROPERTY(EditAnywhere, Category = TSubclass)
-	TSubclassOf<AProjectile> ProjectileClass;
+	//UPROPERTY(EditAnywhere, Category = TSubclass)
+	//TSubclassOf<AProjectile> ProjectileClass;
 
-	UPROPERTY(EditAnywhere, Category = Ammo)
+	UPROPERTY(ReplicatedUsing = OnRep_Grenade, EditAnywhere, Category = Ammo)
 	int32 Grenade = 4;
 
-	void HandleGrenadeRep();
+	UFUNCTION()
+	void OnRep_Grenade();
+
+	//void HandleGrenadeRep();
 
 	UPROPERTY(EditAnywhere, Category = Ammo)
 	int32 MaxGrenade = 4;

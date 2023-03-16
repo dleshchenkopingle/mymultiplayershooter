@@ -44,6 +44,7 @@ void AShooterPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdateHUD();
 	CheckTimeSync(DeltaTime);
 }
 
@@ -348,7 +349,7 @@ void AShooterPlayerController::OnMatchStateSet_Implementation(FName State)
 	HandleMatchState();
 }
 
-void AShooterPlayerController::UpdateHUD_Implementation()
+void AShooterPlayerController::UpdateHUD()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (ShooterHUD) ShooterHUD->Update();
@@ -360,7 +361,7 @@ void AShooterPlayerController::RemoveHUD_Implementation()
 	if (ShooterHUD) ShooterHUD->Remove();
 }
 
-void AShooterPlayerController::TogglePlayersListWidget_Implementation()
+void AShooterPlayerController::TogglePlayersListWidget()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (ShooterHUD) ShooterHUD->TogglePlayersListWidget();

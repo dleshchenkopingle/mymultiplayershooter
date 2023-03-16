@@ -15,19 +15,21 @@ class MULTIPLAYERSHOOTER_API AShooterGameState : public AGameState
 	GENERATED_BODY()
 
 public:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	/** Once a player is eliminated, we then need to update the array: TopScorePlayerStates and update the TopScore player in the HUD */
 	void UpdateTopScorePlayerStates(class AShooterPlayerState* PlayerState);
 
 
 private:
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	float TopScore = 0.f;
 
 	/** The common code within OnRep_TopScore() */
 	void HandleTopScore();
 
 	/** An array contains the top score players' states */
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	TArray<class AShooterPlayerState*> TopScorePlayerStates;
 
 	/** The common code within OnRep_TopScorePlayerStates() */
