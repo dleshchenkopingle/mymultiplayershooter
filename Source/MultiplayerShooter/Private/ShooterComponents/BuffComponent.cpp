@@ -46,7 +46,6 @@ void UBuffComponent::SpeedUp(float Scale, float Duration)
 			Combat->SetBaseWalkSpeedCrouched(Scale * BaseWalkSpeedCrouched);
 			Combat->SetAimWalkSpeed(Scale * AimWalkSpeed);
 			Combat->SetAimWalkSpeedCrouched(Scale * AimWalkSpeedCrouched);
-
 			// Change the character movement speed
 			Combat->UpdateCharacterSpeed();
 		}

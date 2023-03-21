@@ -16,7 +16,7 @@ class MULTIPLAYERSHOOTER_API APickupHealth : public APickup
 
 public:
 	APickupHealth();
-	
+
 protected:
 	virtual void OnSphereBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -29,8 +29,8 @@ protected:
 
 private:
 	UPROPERTY(EditAnywhere, Category = Health)
-	float HealingAmount;
+	float HealingAmount = 100;
 
 	UPROPERTY(EditAnywhere, Category = Health)
-	float Duration;
+	float Duration = 5;
 };

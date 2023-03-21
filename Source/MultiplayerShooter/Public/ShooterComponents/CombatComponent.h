@@ -9,6 +9,8 @@
 #include "Weapon/WeaponType.h"
 #include "CombatComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponEquip, class AWeapon*, EquippedWeapon, class AMainCharacter*, MainCharacter);
+
 UCLASS( ClassGroup=(Combat), meta=(BlueprintSpawnableComponent) )
 class MULTIPLAYERSHOOTER_API UCombatComponent : public UActorComponent
 {
@@ -64,6 +66,8 @@ public:
 	/* Launch the grenade AnimNotify. */
 	UFUNCTION(BlueprintCallable)
 	void LaunchGrenadeAnimNotify();
+
+	FOnWeaponEquip OnWeaponEquip;
 
 protected:
 	virtual void BeginPlay() override;

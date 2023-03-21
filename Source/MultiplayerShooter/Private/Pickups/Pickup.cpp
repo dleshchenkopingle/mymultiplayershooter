@@ -14,6 +14,7 @@
 APickup::APickup()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Scene Component"));
 	SetRootComponent(SceneComponent);
@@ -45,18 +46,17 @@ void APickup::Tick(float DeltaTime)
 void APickup::Destroyed()
 {
 	Super::Destroyed();
-	
-	if (SoundPickup)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, SoundPickup, GetActorLocation());
-	}
 }
 
 void APickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PickupCollision->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereBeginOverlap);
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(BindOverlapTimer, this, &APickup::BindOverlapTimerFinished, BindOverlapTime);
+	}
+
 	GetWorldTimerManager().SetTimer(TurnTimerHandle, this, &APickup::Turn, TurnTimerRate, true);
 }
 
@@ -69,7 +69,7 @@ void APickup::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	}
 }
 
-void APickup::SpawnBuffEffectAttached(AMainCharacter* AttachedCharacter) const
+void APickup::SpawnBuffEffectAttached_Implementation(AMainCharacter* AttachedCharacter) const
 {
 	if (NiagaraEffect && AttachedCharacter && AttachedCharacter->GetMesh())
 	{
@@ -83,7 +83,26 @@ void APickup::SpawnBuffEffectAttached(AMainCharacter* AttachedCharacter) const
 			EAttachLocation::KeepWorldPosition,
 			true
 		);
+
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this,
+			NiagaraEffect,
+			GetActorLocation(),
+			GetActorRotation()
+		);
 	}
+
+	if (SoundPickup)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, SoundPickup, GetActorLocation());
+	}
+}
+
+void APickup::BindOverlapTimerFinished()
+{
+	
+	PickupCollision->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereBeginOverlap);
+	
 }
 
 void APickup::Turn()

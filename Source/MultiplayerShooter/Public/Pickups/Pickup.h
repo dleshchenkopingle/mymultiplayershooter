@@ -30,8 +30,11 @@ protected:
 	);
 
 	/* Set the scale and the extent in child class. */
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	class USphereComponent* PickupCollision;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnBuffEffectAttached(class AMainCharacter* AttachedCharacter) const;
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -53,12 +56,14 @@ private:
 	float BaseTurnRate = 45.f;
 
 	FTimerHandle TurnTimerHandle;
+	FTimerHandle BindOverlapTimer;
+
+	float BindOverlapTime = 0.25;
+
+	void BindOverlapTimerFinished();
 
 	UPROPERTY(EditAnywhere, Category = Effect)
 	float TurnTimerRate = 0.02f;
 	
 	void Turn();
-
-	UFUNCTION()
-	void SpawnBuffEffectAttached(class AMainCharacter* AttachedCharacter) const;
 };

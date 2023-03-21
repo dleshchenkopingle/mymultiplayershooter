@@ -116,6 +116,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	{
 		ShooterPlayerController->UpdateCarriedAmmo(CarriedAmmo);
 	}
+
+	if (OnWeaponEquip.IsBound())
+	{
+		OnWeaponEquip.Broadcast(WeaponToEquip, MainCharacter);
+	}
 }
 
 void UCombatComponent::SetCombatState(const ECombatState State)

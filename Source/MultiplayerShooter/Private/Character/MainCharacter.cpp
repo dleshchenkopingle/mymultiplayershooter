@@ -49,6 +49,7 @@ AMainCharacter::AMainCharacter()
 	Combat->SetIsReplicated(true);
 
 	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("Buff Component"));
+	Buff->SetIsReplicated(true);
 
 	TimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline Component"));
 
