@@ -25,6 +25,21 @@ private:
 	/* Common logic for FireHitScan with and without scatter. */
 	void HitScan(TMap<AActor*, float>& DamageForEachActor, const FVector& Start, const FVector& End);
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayMuzzleFlashEffect();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayFireSoundEffect();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayHitParticleEffect(FVector_NetQuantize ImplactPoint);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayHitSoundEffect();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void PlayBeamParticleEffect(FVector_NetQuantize Start, FVector_NetQuantize ImpactPoint);
+
 	/* Particle effect when the weapon hits something. */
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* HitParticle;
@@ -32,6 +47,15 @@ private:
 	/* Particle effect for the line trace. */
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticle;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* MuzzleFlash;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* FireSound;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* HitSound;
 
 	/* Weapon Damage, normally it should be in projectile class, but here the hit scan weapon supposes it doesn't need projectiles. */
 	UPROPERTY(EditAnywhere)

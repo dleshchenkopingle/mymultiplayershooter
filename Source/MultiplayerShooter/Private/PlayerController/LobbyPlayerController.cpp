@@ -8,13 +8,7 @@
 #include "PlayerState/LobbyPlayerState.h"
 
 
-void ALobbyPlayerController::RemoveHUD_Implementation()
-{
-	LobbyHUD = LobbyHUD ? LobbyHUD : Cast<ALobbyHUD>(GetHUD());
-	if (LobbyHUD) LobbyHUD->Remove();
-}
-
-void ALobbyPlayerController::UpdateHUD_Implementation()
+void ALobbyPlayerController::UpdateHUD()
 {
 	LobbyHUD = LobbyHUD ? LobbyHUD : Cast<ALobbyHUD>(GetHUD());
 	if (LobbyHUD) LobbyHUD->Update();
@@ -34,4 +28,11 @@ void ALobbyPlayerController::ToggleIsReady_Implementation()
 	{
 		LobbyPlayerState->ToggleIsReady();
 	}
+}
+
+void ALobbyPlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateHUD();
 }

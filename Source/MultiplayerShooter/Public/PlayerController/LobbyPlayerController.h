@@ -16,10 +16,6 @@ class MULTIPLAYERSHOOTER_API ALobbyPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
-	UFUNCTION(Client, Reliable)
-	void RemoveHUD();
-
-	UFUNCTION(Client, Reliable)
 	void UpdateHUD();
 
 	UFUNCTION(Server, Reliable)
@@ -27,6 +23,9 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 	void ToggleIsReady();
+
+protected:
+	virtual void Tick(float DeltaTime) override;
 
 private:
 	UPROPERTY()

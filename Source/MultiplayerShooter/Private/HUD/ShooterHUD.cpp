@@ -11,23 +11,29 @@
 #include "PlayerController/ShooterPlayerController.h"
 #include "GameFramework/GameState.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameMode.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 
 // The DrawHUD function will be automatically called when we set the default HUD as BP_ShooterHUD in BP_GameMode settings.
 void AShooterHUD::DrawHUD()
 {
 	Super::DrawHUD();
-	
-	if (GEngine && GEngine->GameViewport)
+
+	if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(GetOwningPlayerController()))
 	{
-		FVector2D ViewportSize;
-		GEngine->GameViewport->GetViewportSize(ViewportSize);
-		ViewportCenter = ViewportSize * .5f;
-		DrawCrosshairs(HUDPackage.CrosshairsCenter, FVector2D(0.f, 0.f));
-		DrawCrosshairs(HUDPackage.CrosshairsLeft, FVector2D(-HUDPackage.CrosshairsCurrentSpread, 0.f));
-		DrawCrosshairs(HUDPackage.CrosshairsRight, FVector2D(HUDPackage.CrosshairsCurrentSpread, 0.f));
-		DrawCrosshairs(HUDPackage.CrosshairsTop, FVector2D(0.f, -HUDPackage.CrosshairsCurrentSpread));
-		DrawCrosshairs(HUDPackage.CrosshairsBottom, FVector2D(0.f, HUDPackage.CrosshairsCurrentSpread));
+		FName CurrentMatchState = ShooterPlayerController->GetMatchState();
+		if (GEngine && GEngine->GameViewport && CurrentMatchState == MatchState::InProgress)
+		{
+			FVector2D ViewportSize;
+			GEngine->GameViewport->GetViewportSize(ViewportSize);
+			ViewportCenter = ViewportSize * .5f;
+			DrawCrosshairs(HUDPackage.CrosshairsCenter, FVector2D(0.f, 0.f));
+			DrawCrosshairs(HUDPackage.CrosshairsLeft, FVector2D(-HUDPackage.CrosshairsCurrentSpread, 0.f));
+			DrawCrosshairs(HUDPackage.CrosshairsRight, FVector2D(HUDPackage.CrosshairsCurrentSpread, 0.f));
+			DrawCrosshairs(HUDPackage.CrosshairsTop, FVector2D(0.f, -HUDPackage.CrosshairsCurrentSpread));
+			DrawCrosshairs(HUDPackage.CrosshairsBottom, FVector2D(0.f, HUDPackage.CrosshairsCurrentSpread));
+		}
 	}
 }
 
@@ -35,13 +41,14 @@ void AShooterHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UWidgetLayoutLibrary::RemoveAllWidgets(GetWorld());
+
 	AddAnnouncement();
 	InitPlayersListWidget();
 }
 
 void AShooterHUD::AddCharacterOverlay()
 {
-	// APlayerController* PlayerController = GetOwningPlayerController();
 	if (CharacterOverlayClass && !CharacterOverlay)
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(GetWorld(), CharacterOverlayClass, FName("Character Overlay"));
@@ -137,8 +144,11 @@ void AShooterHUD::TogglePlayersListWidget()
 
 void AShooterHUD::DrawCrosshairs(UTexture2D* Texture, const FVector2D& Spread)
 {
-	if (!Texture) return;
-	
+	if (!IsValid(Texture))
+	{
+		return;
+	}
+
 	DrawTexture(
 		Texture,
 		ViewportCenter.X - Texture->GetSizeX() * .5f + Spread.X,

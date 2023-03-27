@@ -48,31 +48,22 @@ public:
 	/** Update the top score */
 	void UpdateTopScore();
 	void RefreshHUD();
-
-	UFUNCTION(Client, Reliable)
 	void SetHUDTime();
-
-	UFUNCTION(Client, Reliable)
 	void HandleMatchState();
-
 	/** Once the game mode's MatchState is changed, the player controller's MatchState callback is going to be executed. */
-	UFUNCTION(Client, Reliable)
 	void OnMatchStateSet(FName State);
-
-	//UFUNCTION(Client, Reliable)
 	void UpdateHUD();
-
-	UFUNCTION(Client, Reliable)
-	void RemoveHUD();
-
-	//UFUNCTION(Client, Reliable)
 	void TogglePlayersListWidget();
 
 	UFUNCTION(Server, Reliable)
-	void RequestUpdateTimes();
+	void CheckMatchState();
 
 	UFUNCTION(Server, Reliable)
-	void CheckMatchState();
+	void ServerCheckMatchState();
+
+	FName GetMatchState() const { return MatchState; }
+
+	void UpdateCooldownMatchStateHUD();
 
 private:
 	UPROPERTY()
@@ -98,27 +89,27 @@ private:
 	float SyncRunningTime = 0.f;
 
 	/** Level starting time, MatchState on GameMode is EnteringMap */
-	UPROPERTY(Replicated)
 	float LevelStartingTime = 0.f;
 
 	/** Warmup time, MatchState on GameMode is WaitingToStart */
-	UPROPERTY(Replicated)
 	float WarmupTime = 0.f;
 	
 	/** Match time, MatchState on GameMode is InProgress */
-	UPROPERTY(Replicated)
 	float MatchTime = 0.f;
 
 	/** Cooldown time when MatchState is InProgress and the match countdown has finished */
-	UPROPERTY(Replicated)
 	float CooldownTime = 0.f;
 
 	/** Help to distinguish 2 time seconds in the unit of integer when ticking */
 	int32 CountdownInt = 0;
 
 	/** Match State, once the game mode's match state is changed, the player controller will respond */
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
 	FName MatchState;
 
-	void JoinMidGame(float LevelStarting, float Warmup, float Match, float Cooldown, FName State);
+	UFUNCTION()
+	void OnRep_MatchState();
+
+	UFUNCTION(Client, Reliable)
+	void ClientJoinMidGame(float LevelStarting, float Warmup, float Match, float Cooldown, FName State);
 };

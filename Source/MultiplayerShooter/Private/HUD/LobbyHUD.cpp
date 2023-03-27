@@ -7,6 +7,7 @@
 #include "GameState/LobbyGameState.h"
 #include "PlayerState/LobbyPlayerState.h"
 #include "Kismet/GameplayStatics.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 
 void ALobbyHUD::AddLobbyWidget()
@@ -50,6 +51,8 @@ void ALobbyHUD::Update()
 void ALobbyHUD::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UWidgetLayoutLibrary::RemoveAllWidgets(GetWorld());
 
 	AddLobbyWidget();
 }

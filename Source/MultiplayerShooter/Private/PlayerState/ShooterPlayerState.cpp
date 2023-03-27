@@ -34,18 +34,26 @@ void AShooterPlayerState::UpdateDefeats()
 	ShooterPlayerController->UpdatePlayerDefeats(Defeats);
 }
 
+void AShooterPlayerState::Reset()
+{
+	SetScore(0);
+	Defeats = 0;
+
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetOwningController());
+	if (!ShooterPlayerController) return;
+
+	ShooterPlayerController->UpdatePlayerScore(GetScore());
+	ShooterPlayerController->UpdatePlayerDefeats(Defeats);
+}
+
 void AShooterPlayerState::OnRep_Score()
 {
 	Super::OnRep_Score();
 
-	Character = Character ? Character : Cast<AMainCharacter>(GetPawn());
-	if (Character)
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetOwningController());
+	if (ShooterPlayerController)
 	{
-		ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(GetOwningController());
-		if (ShooterPlayerController)
-		{
-			ShooterPlayerController->UpdatePlayerScore(Score);
-		}
+		ShooterPlayerController->UpdatePlayerScore(Score);
 	}
 }
 

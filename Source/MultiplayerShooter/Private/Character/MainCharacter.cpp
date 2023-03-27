@@ -272,7 +272,11 @@ void AMainCharacter::Eliminated()
 	PlayElimBotEffect();
 
 	OverheadWidget->DestroyComponent(true);
-	GetWorldTimerManager().SetTimer(RespawnTimer, this, &ThisClass::RespawnTimerFinished, TimerDelay, false);
+
+	if (AShooterGameMode* ShooterGameMode = GetWorld()->GetAuthGameMode<AShooterGameMode>())
+	{
+		GetWorldTimerManager().SetTimer(RespawnTimer, this, &ThisClass::RespawnTimerFinished, ShooterGameMode->MinRespawnDelay, false);
+	}
 }
 
 void AMainCharacter::RespawnTimerFinished()
@@ -499,12 +503,14 @@ void AMainCharacter::MoveRight(float Value)
 
 void AMainCharacter::TurnAtRate(float Value)
 {
-	AddControllerYawInput(Value * TurnRate * GetWorld()->GetDeltaSeconds());
+	//AddControllerYawInput(Value * TurnRate * GetWorld()->GetDeltaSeconds());
+	AddControllerYawInput(Value);
 }
 
 void AMainCharacter::LookUpAtRate(float Value)
 {
-	AddControllerPitchInput(Value * TurnRate * GetWorld()->GetDeltaSeconds());
+	//AddControllerPitchInput(Value * TurnRate * GetWorld()->GetDeltaSeconds());
+	AddControllerPitchInput(Value);
 }
 
 void AMainCharacter::EquipButtonPressed()

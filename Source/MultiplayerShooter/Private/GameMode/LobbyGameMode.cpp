@@ -10,16 +10,6 @@
 #include "MatchmakingManager/MatchmakingManager.h"
 
 
-void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
-}
-
-void ALobbyGameMode::Tick(float DeltaSeconds)
-{
-	UpdatePlayersHUD();
-}
-
 void ALobbyGameMode::TryToStartMatch()
 {
 	const int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
@@ -52,48 +42,6 @@ void ALobbyGameMode::Logout(AController* Exiting)
 	Super::Logout(Exiting);
 }
 
-void ALobbyGameMode::BeginPlay()
-{
-	UGameInstanceBase* GameInstance = Cast<UGameInstanceBase>(UGameplayStatics::GetGameInstance(GetWorld()));
-	if (ensureMsgf(GameInstance, TEXT("ALobbyGameMode::BeginPlay - GameInstance is nullptr")))
-	{
-		if (UMatchmakingManager* MatchmakingManager = GameInstance->GetMatchmakingManager())
-		{
-			MatchmakingManager->OnExecuteServerTravel.AddDynamic(this, &ALobbyGameMode::OnServerTravelExecuted);
-		}
-	}
-}
-
-void ALobbyGameMode::UpdatePlayersHUD()
-{
-	auto PlayerArray = GameState.Get()->PlayerArray;
-
-	for (int32 i = 0; i < PlayerArray.Num(); ++i)
-	{
-		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(PlayerArray[i]->GetPlayerController());
-
-		if (ensureMsgf(LobbyPlayerController, TEXT("ALobbyGameMode::RefreshPlayersHUD - PlayerController is nullptr")))
-		{
-			LobbyPlayerController->UpdateHUD();
-		}
-	}
-}
-
-void ALobbyGameMode::RemovePlayersHUD()
-{
-	auto PlayerArray = GameState.Get()->PlayerArray;
-
-	for (int32 i = 0; i < PlayerArray.Num(); ++i)
-	{
-		ALobbyPlayerController* LobbyPlayerController = Cast<ALobbyPlayerController>(PlayerArray[i]->GetPlayerController());
-
-		if (ensureMsgf(LobbyPlayerController, TEXT("ALobbyGameMode::RemovePlayersHUD - PlayerController is nullptr")))
-		{
-			LobbyPlayerController->RemoveHUD();
-		}
-	}
-}
-
 bool ALobbyGameMode::CheckAllPlayersReady()
 {
 	if (ALobbyGameState* LobbyGameState = Cast<ALobbyGameState>(UGameplayStatics::GetGameState(this)))
@@ -117,12 +65,4 @@ bool ALobbyGameMode::CheckAllPlayersReady()
 	}
 
 	return false;
-}
-
-void ALobbyGameMode::OnServerTravelExecuted(bool bWasSuccesful)
-{
-	if (bWasSuccesful)
-	{
-		RemovePlayersHUD();
-	}
 }

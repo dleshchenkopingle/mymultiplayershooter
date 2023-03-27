@@ -85,7 +85,11 @@ void AWeapon::Fire(const FVector& TraceHitTarget)
 	{
 		WeaponMesh->PlayAnimation(FireAnimation, false);
 	}
-	SpendRound();
+
+	if (HasAuthority())
+	{
+		SpendRound();
+	}
 }
 
 void AWeapon::SetWeaponState(EWeaponState State)

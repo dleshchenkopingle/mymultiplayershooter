@@ -30,11 +30,10 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnMatchStateSet() override;
 
-	//void UpdatePlayersHUD();
-	void RemovePlayersHUD();
-
-	UFUNCTION()
-	void OnServerTravelExecuted(bool bWasSuccesful);
+	void SkipMatchTime();
+	void CheckPlayersMatchState();
+	void ResetPlayersStates();
+	void ResetGameState();
 	
 private:
 	/** The time cost for entering the map */

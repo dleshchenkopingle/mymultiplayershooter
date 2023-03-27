@@ -26,17 +26,13 @@ void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AShooterPlayerController, LevelStartingTime);
-	DOREPLIFETIME(AShooterPlayerController, WarmupTime);
-	DOREPLIFETIME(AShooterPlayerController, MatchTime);
-	DOREPLIFETIME(AShooterPlayerController, CooldownTime);
 	DOREPLIFETIME(AShooterPlayerController, MatchState);
 }
 
 void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	ShooterHUD = Cast<AShooterHUD>(GetHUD());
 }
 
@@ -67,7 +63,8 @@ void AShooterPlayerController::ReceivedPlayer()
 	if (IsLocalController())
 	{
 		RequestServerTimeFromClient(GetWorld()->GetTimeSeconds());
-		CheckMatchState();
+		ServerCheckMatchState();
+		//CheckMatchState();
 	}
 }
 
@@ -199,11 +196,15 @@ void AShooterPlayerController::UpdateTopScorePlayer()
 	const AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
 	if (!ShooterGameState) return;
 
-	auto PlayerStates = ShooterGameState->GetTopScorePlayerStates();
-	if (PlayerStates.IsEmpty()) return;
-
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (!ShooterHUD || !ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetCharacterOverlay()->TopScorePlayer) return;
+
+	auto PlayerStates = ShooterGameState->GetTopScorePlayerStates();
+	if (PlayerStates.IsEmpty())
+	{
+		ShooterHUD->GetCharacterOverlay()->TopScorePlayer->SetText(FText::FromString("-------"));
+		return;
+	}
 	
 	FString PlayerName;
 	for (const auto& State: PlayerStates)
@@ -219,12 +220,16 @@ void AShooterPlayerController::UpdateTopScore()
 	const AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
 	if (!ShooterGameState) return;
 
-	const auto PlayerStates = ShooterGameState->GetTopScorePlayerStates();
-	const float TopScore = ShooterGameState->GetTopScore();
-	if (PlayerStates.IsEmpty()) return;
-	
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (!ShooterHUD || !ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetCharacterOverlay()->TopScore) return;
+
+	const auto PlayerStates = ShooterGameState->GetTopScorePlayerStates();
+	const float TopScore = ShooterGameState->GetTopScore();
+	if (PlayerStates.IsEmpty())
+	{
+		ShooterHUD->GetCharacterOverlay()->TopScore->SetText(FText::FromString("-------"));
+		return;
+	}
 	
 	FString TopScoreString;
 	for (int32 i = 0; i < PlayerStates.Num(); ++i)
@@ -240,29 +245,20 @@ void AShooterPlayerController::RefreshHUD()
 	if (ShooterHUD) ShooterHUD->Refresh();
 }
 
-void AShooterPlayerController::SetHUDTime_Implementation()
+void AShooterPlayerController::SetHUDTime()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("AShooterPlayerController::SetHUDTime"));
-
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::WaitingToStart"));
 		TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	}
 	else if (MatchState == MatchState::InProgress)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::InProgress"));
 		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("MatchState == MatchState::Cooldown"));
 		TimeLeft = WarmupTime + MatchTime + CooldownTime - GetServerTime() + LevelStartingTime;
-	}
-	else
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("MatchState == else"));
 	}
 
 	const int32 SecondsLeft = FMath::CeilToInt32(TimeLeft);
@@ -286,8 +282,9 @@ void AShooterPlayerController::SetHUDTime_Implementation()
 	CountdownInt = SecondsLeft;
 }
 
-void AShooterPlayerController::HandleMatchState_Implementation()
+void AShooterPlayerController::HandleMatchState()
 {
+	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (!ShooterHUD) return;
 
 	if (MatchState == MatchState::InProgress)
@@ -301,49 +298,54 @@ void AShooterPlayerController::HandleMatchState_Implementation()
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
-		if (!ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetAnnouncement() ||
-			!ShooterHUD->GetAnnouncement()->Announce_0 || !ShooterHUD->GetAnnouncement()->Announce_1 ||
-			!ShooterHUD->GetAnnouncement()->WinText) return;
-
-		ShooterHUD->GetCharacterOverlay()->RemoveFromParent();
-		ShooterHUD->GetAnnouncement()->Announce_0->SetText(FText::FromString("New Match Starts in:"));
-		ShooterHUD->GetAnnouncement()->Announce_1->SetText(FText::FromString(""));
-		ShooterHUD->GetAnnouncement()->SetVisibility(ESlateVisibility::Visible);
-
-		// When the match ends, we show the winner announcement.
-		const AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
-		const AShooterPlayerState* ShooterPlayerState = GetPlayerState<AShooterPlayerState>();
-		if (!ShooterGameState || !ShooterPlayerState) return;
-
-		FString WinString;
-		auto PlayerStates = ShooterGameState->GetTopScorePlayerStates();
-		if (PlayerStates.Num() == 0)
-		{
-			WinString = "There is no winner.";
-		}
-		else if (PlayerStates.Num() == 1 && PlayerStates[0] == ShooterPlayerState)
-		{
-			WinString = "You are the winner!";
-		}
-		else if (PlayerStates.Num() == 1)
-		{
-			WinString = "Winner:\n";
-			WinString.Append(FString::Printf(TEXT("%s\n"), *PlayerStates[0]->GetPlayerName()));
-		}
-		else if (PlayerStates.Num() > 1)
-		{
-			WinString = "Players tied for the win:\n";
-			for (const auto& State : PlayerStates)
-			{
-				WinString.Append(FString::Printf(TEXT("%s\n"), *State->GetPlayerName()));
-			}
-		}
-		ShooterHUD->GetAnnouncement()->WinText->SetText(FText::FromString(WinString));
-		ShooterHUD->GetAnnouncement()->WinText->SetVisibility(ESlateVisibility::Visible);
+		UpdateCooldownMatchStateHUD();
 	}
 }
 
-void AShooterPlayerController::OnMatchStateSet_Implementation(FName State)
+void AShooterPlayerController::UpdateCooldownMatchStateHUD()
+{
+	if (!ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetAnnouncement() ||
+		!ShooterHUD->GetAnnouncement()->Announce_0 || !ShooterHUD->GetAnnouncement()->Announce_1 ||
+		!ShooterHUD->GetAnnouncement()->WinText) return;
+
+	ShooterHUD->GetCharacterOverlay()->RemoveFromParent();
+	ShooterHUD->GetAnnouncement()->Announce_0->SetText(FText::FromString("New Match Starts in:"));
+	ShooterHUD->GetAnnouncement()->Announce_1->SetText(FText::FromString(""));
+	ShooterHUD->GetAnnouncement()->SetVisibility(ESlateVisibility::Visible);
+
+	// When the match ends, we show the winner announcement.
+	AShooterGameState* ShooterGameState = Cast<AShooterGameState>(UGameplayStatics::GetGameState(this));
+	const AShooterPlayerState* ShooterPlayerState = GetPlayerState<AShooterPlayerState>();
+	if (!ShooterGameState || !ShooterPlayerState) return;
+
+	FString WinString;
+	auto PlayerStates = ShooterGameState->GetTopScorePlayerStates();
+	if (PlayerStates.Num() == 0)
+	{
+		WinString = "There is no winner.";
+	}
+	else if (PlayerStates.Num() == 1 && PlayerStates[0] == ShooterPlayerState)
+	{
+		WinString = "You are the winner!";
+	}
+	else if (PlayerStates.Num() == 1)
+	{
+		WinString = "Winner:\n";
+		WinString.Append(FString::Printf(TEXT("%s\n"), *PlayerStates[0]->GetPlayerName()));
+	}
+	else if (PlayerStates.Num() > 1)
+	{
+		WinString = "Players tied for the win:\n";
+		for (const auto& State : PlayerStates)
+		{
+			WinString.Append(FString::Printf(TEXT("%s\n"), *State->GetPlayerName()));
+		}
+	}
+	ShooterHUD->GetAnnouncement()->WinText->SetText(FText::FromString(WinString));
+	ShooterHUD->GetAnnouncement()->WinText->SetVisibility(ESlateVisibility::Visible);
+}
+
+void AShooterPlayerController::OnMatchStateSet(FName State)
 {
 	MatchState = State;
 	HandleMatchState();
@@ -355,27 +357,10 @@ void AShooterPlayerController::UpdateHUD()
 	if (ShooterHUD) ShooterHUD->Update();
 }
 
-void AShooterPlayerController::RemoveHUD_Implementation()
-{
-	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
-	if (ShooterHUD) ShooterHUD->Remove();
-}
-
 void AShooterPlayerController::TogglePlayersListWidget()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (ShooterHUD) ShooterHUD->TogglePlayersListWidget();
-}
-
-void AShooterPlayerController::RequestUpdateTimes_Implementation()
-{
-	const AShooterGameMode* ShooterGameMode = Cast<AShooterGameMode>(GetWorld()->GetAuthGameMode());
-	if (!ShooterGameMode) return;
-
-	LevelStartingTime = ShooterGameMode->GetLevelStartingTime();
-	WarmupTime = ShooterGameMode->GetWarmupTime();
-	MatchTime = ShooterGameMode->GetMatchTime();
-	CooldownTime = ShooterGameMode->GetCooldownTime();
 }
 
 void AShooterPlayerController::RequestServerTimeFromClient_Implementation(float ClientRequestTime)
@@ -406,19 +391,39 @@ void AShooterPlayerController::CheckMatchState_Implementation()
 	const AShooterGameMode* ShooterGameMode = Cast<AShooterGameMode>(GetWorld()->GetAuthGameMode());
 	if (!ShooterGameMode) return;
 	
-	JoinMidGame(ShooterGameMode->GetLevelStartingTime(), ShooterGameMode->GetWarmupTime(), ShooterGameMode->GetMatchTime(),
-		ShooterGameMode->GetCooldownTime(), ShooterGameMode->GetMatchState());
+	//JoinMidGame(ShooterGameMode->GetLevelStartingTime(), ShooterGameMode->GetWarmupTime(), ShooterGameMode->GetMatchTime(),
+	//	ShooterGameMode->GetCooldownTime(), ShooterGameMode->GetMatchState());
 }
 
-void AShooterPlayerController::JoinMidGame(float LevelStarting, float Warmup, float Match, float Cooldown, FName State)
+void AShooterPlayerController::ServerCheckMatchState_Implementation()
+{
+	const AShooterGameMode* ShooterGameMode = Cast<AShooterGameMode>(GetWorld()->GetAuthGameMode());
+	if (!ShooterGameMode) return;
+
+	LevelStartingTime = ShooterGameMode->GetLevelStartingTime();
+	WarmupTime = ShooterGameMode->GetWarmupTime();
+	MatchTime = ShooterGameMode->GetMatchTime();
+	CooldownTime = ShooterGameMode->GetCooldownTime();
+	//MatchState = ShooterGameMode->GetMatchState();
+	OnMatchStateSet(ShooterGameMode->GetMatchState());
+
+	ClientJoinMidGame(LevelStartingTime, WarmupTime, MatchTime, CooldownTime, MatchState);
+}
+
+void AShooterPlayerController::OnRep_MatchState()
+{
+	HandleMatchState();
+}
+
+void AShooterPlayerController::ClientJoinMidGame_Implementation(float LevelStarting, float Warmup, float Match, float Cooldown, FName State)
 {
 	LevelStartingTime = LevelStarting;
 	WarmupTime = Warmup;
 	MatchTime = Match;
 	CooldownTime = Cooldown;
-	MatchState = State;
+	//MatchState = State;
 
 	// If the player is joining mid-game and the game is now in progress, the UI should switch to the MatchState's UI, so the
 	// player should be notified which game state is now going on.
-	OnMatchStateSet(MatchState);
+	OnMatchStateSet(State);
 }

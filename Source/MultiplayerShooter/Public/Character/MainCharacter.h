@@ -156,8 +156,8 @@ private:
 	FTimerHandle RespawnTimer;
 
 	//ElimDelay
-	UPROPERTY(EditAnywhere, Category = PlayerStats)
-	float TimerDelay = 3.f;
+	//UPROPERTY(EditAnywhere, Category = PlayerStats)
+	//float TimerDelay = 3.f;
 	
 	void RespawnTimerFinished();
 

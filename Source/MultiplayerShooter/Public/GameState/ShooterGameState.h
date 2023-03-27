@@ -19,7 +19,7 @@ public:
 
 	/** Once a player is eliminated, we then need to update the array: TopScorePlayerStates and update the TopScore player in the HUD */
 	void UpdateTopScorePlayerStates(class AShooterPlayerState* PlayerState);
-
+	void ResetScores();
 
 private:
 	UPROPERTY(Replicated)
@@ -29,13 +29,16 @@ private:
 	void HandleTopScore();
 
 	/** An array contains the top score players' states */
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_TopScorePlayerStates)
 	TArray<class AShooterPlayerState*> TopScorePlayerStates;
+
+	UFUNCTION()
+	void OnRep_TopScorePlayerStates();
 
 	/** The common code within OnRep_TopScorePlayerStates() */
 	void HandleTopScorePlayerStates();
 
 public:
 	FORCEINLINE float GetTopScore() const { return TopScore; }
-	 FORCEINLINE const TArray<class AShooterPlayerState*>& GetTopScorePlayerStates() const { return TopScorePlayerStates; }
+	FORCEINLINE const TArray<class AShooterPlayerState*>& GetTopScorePlayerStates() const { return TopScorePlayerStates; }
 };

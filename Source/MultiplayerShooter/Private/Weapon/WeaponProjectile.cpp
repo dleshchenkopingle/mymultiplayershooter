@@ -12,14 +12,12 @@ void AWeaponProjectile::Fire(const FVector& TraceHitTarget)
 	// Call the code in the parent's function. It's something like clone the parent's code here.
 	Super::Fire(TraceHitTarget);
 
-	if (!HasAuthority())
+	if (HasAuthority())
 	{
-		return;
+		// Respective game logic (weapon functionality)
+		FireProjectile(TraceHitTarget);
+		EjectProjectileShell();
 	}
-	
-	// Respective game logic (weapon functionality)
-	FireProjectile(TraceHitTarget);
-	EjectProjectileShell();
 }
 
 void AWeaponProjectile::FireProjectile(const FVector& TraceHitTarget)

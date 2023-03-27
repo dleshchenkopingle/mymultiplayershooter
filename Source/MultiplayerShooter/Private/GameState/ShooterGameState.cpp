@@ -44,6 +44,12 @@ void AShooterGameState::UpdateTopScorePlayerStates(AShooterPlayerState* PlayerSt
 	}
 }
 
+void AShooterGameState::ResetScores()
+{
+	TopScorePlayerStates.Empty();
+	HandleTopScore();
+	HandleTopScorePlayerStates();
+}
 
 void AShooterGameState::HandleTopScore()
 {
@@ -52,6 +58,14 @@ void AShooterGameState::HandleTopScore()
 	
 	// Updating the TopScore in the HUD
 	ShooterPlayerController->UpdateTopScore();
+}
+
+void AShooterGameState::OnRep_TopScorePlayerStates()
+{
+	AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+	if (!ShooterPlayerController) return;
+
+	ShooterPlayerController->HandleMatchState();
 }
 
 void AShooterGameState::HandleTopScorePlayerStates()

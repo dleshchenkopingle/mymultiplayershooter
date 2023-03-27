@@ -21,6 +21,8 @@ public:
 
 	void UpdateDefeats();
 
+	void Reset();
+
 	virtual void OnRep_Score() override;
 	UFUNCTION()
 	void OnRep_Defeats();

@@ -7,12 +7,16 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Weapon/WeaponType.h"
+#include "Sound/SoundCue.h"
 
 void AWeaponHitScan::Fire(const FVector& TraceHitTarget)
 {
 	Super::Fire(TraceHitTarget);
 
-	FireHitScan(TraceHitTarget);
+	if (HasAuthority())
+	{
+		FireHitScan(TraceHitTarget);
+	}
 }
 
 void AWeaponHitScan::FireHitScan(const FVector& TraceHitTarget)
@@ -45,6 +49,9 @@ void AWeaponHitScan::FireHitScan(const FVector& TraceHitTarget)
 				UDamageType::StaticClass());
 		}
 	}
+
+	PlayMuzzleFlashEffect();
+	PlayFireSoundEffect();
 }
 
 void AWeaponHitScan::HitScan(TMap<AActor*, float>& DamageForEachActor, const FVector& Start, const FVector& End)
@@ -61,22 +68,9 @@ void AWeaponHitScan::HitScan(TMap<AActor*, float>& DamageForEachActor, const FVe
 	}
 	if (!HitResult.bBlockingHit) return;
 		
-	
-	UGameplayStatics::SpawnEmitterAtLocation(
-		this,
-		HitParticle,
-		HitResult.ImpactPoint
-	);
-
-	
-	if (UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
-		this,
-		BeamParticle,
-		Start
-	))
-	{
-		Beam->SetVectorParameter(FName("Target"), HitResult.ImpactPoint);
-	}
+	PlayHitParticleEffect(HitResult.ImpactPoint);
+	PlayHitSoundEffect();
+	PlayBeamParticleEffect(Start, HitResult.ImpactPoint);
 
 	// Insert the 'damage for each actor' pair into the map.
 	if (DamageForEachActor.Contains(HitResult.GetActor()))
@@ -86,5 +80,54 @@ void AWeaponHitScan::HitScan(TMap<AActor*, float>& DamageForEachActor, const FVe
 	else
 	{
 		DamageForEachActor.Emplace(HitResult.GetActor(), Damage);
+	}
+}
+
+void AWeaponHitScan::PlayMuzzleFlashEffect_Implementation()
+{
+	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
+	if (MuzzleFlashSocket)
+	{
+		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+		if (MuzzleFlash)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
+		}
+	}
+}
+
+void AWeaponHitScan::PlayFireSoundEffect_Implementation()
+{
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	}
+}
+
+void AWeaponHitScan::PlayHitParticleEffect_Implementation(FVector_NetQuantize ImplactPoint)
+{
+	if (HitParticle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(this, HitParticle, ImplactPoint);
+	}
+}
+
+void AWeaponHitScan::PlayHitSoundEffect_Implementation()
+{
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, GetActorLocation());
+	}
+}
+
+void AWeaponHitScan::PlayBeamParticleEffect_Implementation(FVector_NetQuantize Start, FVector_NetQuantize ImpactPoint)
+{
+	if (UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+		this,
+		BeamParticle,
+		Start
+	))
+	{
+		Beam->SetVectorParameter(FName("Target"), ImpactPoint);
 	}
 }

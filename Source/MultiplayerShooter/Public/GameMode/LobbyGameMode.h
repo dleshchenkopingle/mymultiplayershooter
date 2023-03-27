@@ -15,25 +15,13 @@ class MULTIPLAYERSHOOTER_API ALobbyGameMode : public AGameMode
 	GENERATED_BODY()
 
 public:
-	virtual void PostLogin(APlayerController* NewPlayer) override;
-
-	virtual void Tick(float DeltaSeconds) override;
-
 	void TryToStartMatch();
 
 	/** Called when a Controller with a PlayerState leaves the game or is destroyed */
 	virtual void Logout(AController* Exiting) override;
 
 protected:
-	virtual void BeginPlay() override;
-
-	void UpdatePlayersHUD();
-	void RemovePlayersHUD();
-
 	bool CheckAllPlayersReady();
-
-	UFUNCTION()
-	void OnServerTravelExecuted(bool bWasSuccesful);
 
 protected:
 	UPROPERTY(EditDefaultsOnly)

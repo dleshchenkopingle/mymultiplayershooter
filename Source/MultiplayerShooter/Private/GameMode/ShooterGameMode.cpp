@@ -28,14 +28,9 @@ void AShooterGameMode::BeginPlay()
 
 	LevelStartingTime = GetWorld()->GetTimeSeconds();
 
-	UGameInstanceBase* GameInstance = Cast<UGameInstanceBase>(UGameplayStatics::GetGameInstance(GetWorld()));
-	if (ensureMsgf(GameInstance, TEXT("AShooterGameMode::BeginPlay - GameInstance is nullptr")))
-	{
-		if (UMatchmakingManager* MatchmakingManager = GameInstance->GetMatchmakingManager())
-		{
-			MatchmakingManager->OnExecuteServerTravel.AddDynamic(this, &AShooterGameMode::OnServerTravelExecuted);
-		}
-	}
+	ResetPlayersStates();
+	ResetGameState();
+	CheckPlayersMatchState();
 }
 
 void AShooterGameMode::Tick(float DeltaSeconds)
@@ -55,10 +50,9 @@ void AShooterGameMode::Tick(float DeltaSeconds)
 	else if (MatchState == MatchState::Cooldown)
 	{
 		CountdownTime = WarmupTime + MatchTime + CooldownTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+
 		if (CountdownTime <= 0.f) RestartGame();
 	}
-
-	//UpdatePlayersHUD();
 }
 
 void AShooterGameMode::OnMatchStateSet()
@@ -74,34 +68,42 @@ void AShooterGameMode::OnMatchStateSet()
 	}
 }
 
-//void AShooterGameMode::UpdatePlayersHUD()
-//{
-//	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-//	{
-//		if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(*It))
-//		{
-//			ShooterPlayerController->UpdateHUD();
-//		}
-//	}
-//}
+void AShooterGameMode::SkipMatchTime()
+{
+	MatchTime = GetWorld()->GetTimeSeconds() - LevelStartingTime - WarmupTime;
+}
 
-void AShooterGameMode::RemovePlayersHUD()
+void AShooterGameMode::CheckPlayersMatchState()
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(*It))
 		{
-			ShooterPlayerController->RemoveHUD();
+			ShooterPlayerController->ServerCheckMatchState();
 		}
 	}
 }
 
-void AShooterGameMode::OnServerTravelExecuted(bool bWasSuccesful)
+void AShooterGameMode::ResetPlayersStates()
 {
-	if (bWasSuccesful)
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		RemovePlayersHUD();
+		if (AShooterPlayerController* ShooterPlayerController = Cast<AShooterPlayerController>(*It))
+		{
+			if (AShooterPlayerState* ShooterPlayerState = ShooterPlayerController->GetPlayerState<AShooterPlayerState>())
+			{
+				ShooterPlayerState->Reset();
+			}
+		}
 	}
+}
+
+void AShooterGameMode::ResetGameState()
+{
+	AShooterGameState* ShooterGameState = GetGameState<AShooterGameState>();
+	if (!ShooterGameState) return;
+
+	ShooterGameState->ResetScores();
 }
 
 void AShooterGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, AShooterPlayerController* VictimController, AShooterPlayerController* AttackerController)
@@ -118,14 +120,14 @@ void AShooterGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, ASh
 	if (AttackerPlayerState != VictimPlayerState)
 	{
 		AttackerPlayerState->UpdateScore();
+
+		if (AShooterGameState* ShooterGameState = GetGameState<AShooterGameState>())
+		{
+			// Update GameState Info
+			ShooterGameState->UpdateTopScorePlayerStates(AttackerPlayerState);
+		}
 	}
 	VictimPlayerState->UpdateDefeats();
-
-	AShooterGameState* ShooterGameState = GetGameState<AShooterGameState>();
-	if (!ShooterGameState) return;
-
-	// Update GameState Info
-	ShooterGameState->UpdateTopScorePlayerStates(AttackerPlayerState);
 }
 
 void AShooterGameMode::RequestRespawn(AMainCharacter* EliminatedCharacter, AController* EliminatedController)

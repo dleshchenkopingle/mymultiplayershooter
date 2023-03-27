@@ -13,4 +13,11 @@ UCLASS()
 class MULTIPLAYERSHOOTER_API ACompetitiveGameMode : public AShooterGameMode
 {
 	GENERATED_BODY()
+
+public:
+	virtual void PlayerEliminated(class AMainCharacter* EliminatedCharacter, class AShooterPlayerController* VictimController, class AShooterPlayerController* AttackerController) override;
+	virtual void RequestRespawn(class AMainCharacter* EliminatedCharacter, class AController* EliminatedController) override;
+
+protected:
+	TArray<class AShooterPlayerController*> EliminatedPlayers;
 };
