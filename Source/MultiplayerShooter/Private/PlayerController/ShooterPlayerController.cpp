@@ -15,11 +15,11 @@
 #include "HUD/CharacterOverlay.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "ShooterComponents/CombatComponent.h"
 
 AShooterPlayerController::AShooterPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
 }
 
 void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -32,7 +32,8 @@ void AShooterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	EnableCheats();
 	ShooterHUD = Cast<AShooterHUD>(GetHUD());
 }
 
@@ -169,7 +170,10 @@ void AShooterPlayerController::UpdateAnnouncement(int32 Countdown)
 void AShooterPlayerController::UpdateMatchCountDown(int32 Countdown)
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
-	if (!ShooterHUD || !ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetCharacterOverlay()->MatchCountdown) return;
+	if (!ShooterHUD || !ShooterHUD->GetCharacterOverlay() || !ShooterHUD->GetCharacterOverlay()->MatchCountdown)
+	{
+		return;
+	}
 
 	UCharacterOverlay* CharacterOverlay = ShooterHUD->GetCharacterOverlay();
 	if (Countdown > 0 && Countdown <= 30)
@@ -354,13 +358,21 @@ void AShooterPlayerController::OnMatchStateSet(FName State)
 void AShooterPlayerController::UpdateHUD()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
-	if (ShooterHUD) ShooterHUD->Update();
+	if (ShooterHUD)
+	{
+		ShooterHUD->Update();
+	}
 }
 
 void AShooterPlayerController::TogglePlayersListWidget()
 {
 	ShooterHUD = ShooterHUD ? ShooterHUD : Cast<AShooterHUD>(GetHUD());
 	if (ShooterHUD) ShooterHUD->TogglePlayersListWidget();
+}
+
+void AShooterPlayerController::ResetWeaponVariables()
+{
+
 }
 
 void AShooterPlayerController::RequestServerTimeFromClient_Implementation(float ClientRequestTime)

@@ -54,6 +54,7 @@ public:
 	void OnMatchStateSet(FName State);
 	void UpdateHUD();
 	void TogglePlayersListWidget();
+	void ResetWeaponVariables();
 
 	UFUNCTION(Server, Reliable)
 	void CheckMatchState();

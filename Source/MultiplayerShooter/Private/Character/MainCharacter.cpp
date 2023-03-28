@@ -279,6 +279,51 @@ void AMainCharacter::Eliminated()
 	}
 }
 
+void AMainCharacter::SetIsImmuned(bool bNewIsImmuned)
+{
+	if (bIsImmuned == bNewIsImmuned)
+	{
+		return;
+	}
+
+	if (HasAuthority())
+	{
+		bIsImmuned = bNewIsImmuned;
+	}
+	else
+	{
+		ServerSetIsImmuned(bNewIsImmuned);
+	}
+}
+
+void AMainCharacter::ServerSetIsImmuned_Implementation(bool bNewIsImmuned)
+{
+	bIsImmuned = bNewIsImmuned;
+}
+
+void AMainCharacter::SetMaxHealth()
+{
+	if (FMath::IsNearlyEqual(Health,MaxHealth))
+	{
+		return;
+	}
+
+	if (HasAuthority())
+	{
+		Health = MaxHealth;
+		UpdateHUDHealth();
+	}
+	else
+	{
+		ServerSetMaxHealth();
+	}
+}
+
+void AMainCharacter::ServerSetMaxHealth_Implementation()
+{
+	Health = MaxHealth;
+}
+
 void AMainCharacter::RespawnTimerFinished()
 {
 	if (!GetWorld()) return;
@@ -292,8 +337,11 @@ void AMainCharacter::RespawnTimerFinished()
 void AMainCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	// If the character is eliminated, then directly return to avoid spam, or the character will be spawned multiple times.
-	if (Health <= 0.f) return;
-	
+	if (Health <= 0.f || bIsImmuned)
+	{
+		return;
+	}
+
 	SetHealth(FMath::Clamp(Health - Damage, 0.f, MaxHealth));
 	UpdateHUDHealth();
 	if (Health <= 0.f && GetWorld())
@@ -470,6 +518,7 @@ void AMainCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME_CONDITION(AMainCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMainCharacter, Health);
+	DOREPLIFETIME(AMainCharacter, bIsImmuned);
 }
 
 void AMainCharacter::MoveForward(float Value)

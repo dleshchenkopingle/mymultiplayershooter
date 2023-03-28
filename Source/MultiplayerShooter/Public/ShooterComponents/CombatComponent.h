@@ -34,6 +34,7 @@ public:
 	FORCEINLINE void SetAimWalkSpeedCrouched(float Speed) { AimCrouchWalkSpeed = Speed; }
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+	FString GetEquippedWeaponTypeString() const;
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	void SetCombatState(const ECombatState State);
 	FORCEINLINE bool IsCarriedAmmoEmpty() const { return CarriedAmmo <= 0; }
@@ -47,7 +48,11 @@ public:
 	FORCEINLINE bool IsGrenadeEmpty() const { return Grenade <= 0; }
 	FORCEINLINE int32 GetGrenadeAmount() const { return Grenade; }
 	void SetGrenadeAmount(int32 Amount);
-	
+
+	void SetCurrentAmmoAmount(int32 AmmoAmount);
+	UFUNCTION(Server, Reliable)
+	void ServerSetCurrentAmmoAmount(int32 AmmoAmount);
+
 	/* Reload Animation Notify, we call it directly in AnimNotifyReload.cpp */
 	void ReloadAnimNotify();
 	void Reload();

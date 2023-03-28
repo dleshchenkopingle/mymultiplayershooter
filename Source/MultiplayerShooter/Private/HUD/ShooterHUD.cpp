@@ -37,6 +37,16 @@ void AShooterHUD::DrawHUD()
 	}
 }
 
+UCharacterOverlay* AShooterHUD::GetCharacterOverlay()
+{
+	if (!CharacterOverlay)
+	{
+		//AddCharacterOverlay();
+	}
+
+	return CharacterOverlay;
+}
+
 void AShooterHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -56,12 +66,11 @@ void AShooterHUD::AddCharacterOverlay()
 		{
 			return;
 		}
-
-		Refresh();
 	}
 
 	if (!CharacterOverlay->IsInViewport())
 	{
+		Refresh();
 		CharacterOverlay->AddToViewport();
 	}
 }
@@ -89,6 +98,17 @@ void AShooterHUD::Refresh()
 		if (MainCharacter && MainCharacter->GetCombat())
 		{
 			ShooterPlayerController->UpdateGrenade(MainCharacter->GetCombat()->GetGrenadeAmount());
+			ShooterPlayerController->UpdateCarriedAmmo(MainCharacter->GetCombat()->GetCarriedAmmo());
+			ShooterPlayerController->UpdateWeaponType(MainCharacter->GetCombat()->GetEquippedWeaponTypeString());
+
+			if (AWeapon* EquippedWeapon = MainCharacter->GetCombat()->GetEquippedWeapon())
+			{
+				ShooterPlayerController->UpdateWeaponAmmo(EquippedWeapon->GetAmmo());
+			}
+			else
+			{
+				ShooterPlayerController->UpdateWeaponAmmo(0);
+			}
 		}
 	}
 }

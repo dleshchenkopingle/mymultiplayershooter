@@ -13,6 +13,7 @@
 #include "PlayerController/ShooterPlayerController.h"
 #include "Weapon/Projectile.h"
 
+
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -76,7 +77,16 @@ void UCombatComponent::UpdateCharacterSpeed()
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
-	if (!MainCharacter || !WeaponToEquip) return;
+	if (!MainCharacter || !WeaponToEquip)
+	{
+		return;
+	}
+
+	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->Controller);
+	if (!ShooterPlayerController)
+	{
+		return;
+	}
 
 	// Drop equipped weapon.
 	if (EquippedWeapon) EquippedWeapon->Dropped();
@@ -111,15 +121,41 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
 	}
 
-	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->Controller);
-	if (ShooterPlayerController)
-	{
-		ShooterPlayerController->UpdateCarriedAmmo(CarriedAmmo);
-	}
+	ShooterPlayerController->UpdateCarriedAmmo(CarriedAmmo);
 
 	if (OnWeaponEquip.IsBound())
 	{
 		OnWeaponEquip.Broadcast(WeaponToEquip, MainCharacter);
+	}
+}
+
+FString UCombatComponent::GetEquippedWeaponTypeString() const
+{
+	if (!EquippedWeapon)
+	{
+		return FString("Weapon Type");
+	}
+
+	switch (EquippedWeapon->GetWeaponType())
+	{
+	case EWeaponType::EWT_AssaultRifle:
+		return FString("Assault Rifle");
+	case EWeaponType::EWT_RocketLauncher:
+		return FString("Rocket Launcher");
+	case EWeaponType::EWT_Pistol:
+		return FString("Pistol");
+	case EWeaponType::EWT_SMG:
+		return FString("SMG");
+	case EWeaponType::EWT_Shotgun:
+		return FString("Shotgun");
+	case EWeaponType::EWT_SniperRifle:
+		return FString("Sniper Rifle");
+	case EWeaponType::EWT_GrenadeLauncher:
+		return FString("Grenade Launcher");
+	case EWeaponType::EWT_MAX:
+		return FString("Weapon Type");
+	default:
+		return FString("Weapon Type");
 	}
 }
 
@@ -297,34 +333,7 @@ void UCombatComponent::SetHUDWeaponType()
 {
 	if (!MainCharacter || !EquippedWeapon) return;
 
-	FString WeaponType;
-	switch(EquippedWeapon->GetWeaponType())
-	{
-	case EWeaponType::EWT_AssaultRifle:
-		WeaponType = FString("Assault Rifle");
-		break;
-	case EWeaponType::EWT_RocketLauncher:
-		WeaponType = FString("Rocket Launcher");
-		break;
-	case EWeaponType::EWT_Pistol:
-		WeaponType = FString("Pistol");
-		break;
-	case EWeaponType::EWT_SMG:
-		WeaponType = FString("SMG");
-		break;
-	case EWeaponType::EWT_Shotgun:
-		WeaponType = FString("Shotgun");
-		break;
-	case EWeaponType::EWT_SniperRifle:
-		WeaponType = FString("Sniper Rifle");
-		break;
-	case EWeaponType::EWT_GrenadeLauncher:
-		WeaponType = FString("Grenade Launcher");
-		break;
-	case EWeaponType::EWT_MAX:
-		WeaponType = FString("");
-		break;
-	}
+	FString WeaponType = GetEquippedWeaponTypeString();
 	ShooterPlayerController = ShooterPlayerController ? ShooterPlayerController : Cast<AShooterPlayerController>(MainCharacter->Controller);
 	if (ShooterPlayerController) ShooterPlayerController->UpdateWeaponType(WeaponType);
 }
@@ -603,6 +612,52 @@ void UCombatComponent::SetGrenadeAmount(int32 Amount)
 	Grenade = FMath::Clamp(Amount, 0, MaxGrenade);
 
 	//HandleGrenadeRep();
+}
+
+void UCombatComponent::SetCurrentAmmoAmount(int32 AmmoAmount)
+{
+	if (!MainCharacter)
+	{
+		return;
+	}
+
+	if (MainCharacter->HasAuthority())
+	{
+		const int32 AmmoFromMap = GetCarriedAmmoFromMap(CarriedWeaponType);
+		if (AmmoFromMap != -1)
+		{
+			UpdateCarriedAmmoMap({ CarriedWeaponType, AmmoAmount });
+		}
+		if (EquippedWeapon && CarriedWeaponType == EquippedWeapon->GetWeaponType())
+		{
+			SetCarriedAmmo(AmmoAmount);
+			if (EquippedWeapon->IsAmmoEmpty())
+			{
+				Reload();
+			}
+		}
+	}
+	else
+	{
+		ServerSetCurrentAmmoAmount(AmmoAmount);
+	}
+}
+
+void UCombatComponent::ServerSetCurrentAmmoAmount_Implementation(int32 AmmoAmount)
+{
+	const int32 AmmoFromMap = GetCarriedAmmoFromMap(CarriedWeaponType);
+	if (AmmoFromMap != -1)
+	{
+		UpdateCarriedAmmoMap({ CarriedWeaponType, AmmoAmount });
+	}
+	if (EquippedWeapon && CarriedWeaponType == EquippedWeapon->GetWeaponType())
+	{
+		SetCarriedAmmo(AmmoAmount);
+		if (EquippedWeapon->IsAmmoEmpty())
+		{
+			Reload();
+		}
+	}
 }
 
 void UCombatComponent::OnRep_Grenade()

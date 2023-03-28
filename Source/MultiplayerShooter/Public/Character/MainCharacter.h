@@ -69,7 +69,15 @@ public:
 	/* Display the sniper scope effect when aiming. */
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
-	
+
+	void SetIsImmuned(bool bNewIsImmuned);
+	UFUNCTION(Server, Reliable)
+	void ServerSetIsImmuned(bool bNewIsImmuned);
+
+	void SetMaxHealth();
+	UFUNCTION(Server, Reliable)
+	void ServerSetMaxHealth();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* CameraBoom;
@@ -151,6 +159,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = PlayerStats)
 	bool IsRespawned = false;
+
+	UPROPERTY(Replicated)
+	bool bIsImmuned = false;
 
 	//ElimTimer
 	FTimerHandle RespawnTimer;

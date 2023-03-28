@@ -14,7 +14,13 @@ class MULTIPLAYERSHOOTER_API UCheatManagerBase : public UCheatManager
 {
 	GENERATED_BODY()
 	
-private:
-	/* Starts the game in lobby when there are more than two players */
+public:
+	UFUNCTION(exec)
+	void SetIsImmuned(bool bNewIsImmuned);
 
+	UFUNCTION(exec)
+	void SetMaxHealth();
+
+	UFUNCTION(exec)
+	void SetCurrentAmmoAmount(int32 AmmoAmount);
 };

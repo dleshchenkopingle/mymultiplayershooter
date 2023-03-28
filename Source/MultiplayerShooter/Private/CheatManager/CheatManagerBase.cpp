@@ -2,19 +2,37 @@
 
 
 #include "CheatManager/CheatManagerBase.h"
-#include "PlayerController/ShooterPlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Character/MainCharacter.h"
+#include "ShooterComponents/CombatComponent.h"
 
-//void UCheatManagerBase::StartGame()
-//{
-//	GEngine->AddOnScreenDebugMessage(
-//		-1,
-//		15.f,
-//		FColor::Green,
-//		FString(TEXT("UCheatManagerBase::StartGame()"))
-//	);
-//
-//	if (AShooterPlayerController* PlayerController = Cast<AShooterPlayerController>(GetPlayerController()))
-//	{
-//		PlayerController->StartGame();
-//	}
-//}
+
+void UCheatManagerBase::SetIsImmuned(bool bNewIsImmuned)
+{
+	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(PlayerCharacter))
+	{
+		MainCharacter->SetIsImmuned(bNewIsImmuned);
+	}
+}
+
+void UCheatManagerBase::SetMaxHealth()
+{
+	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(PlayerCharacter))
+	{
+		MainCharacter->SetMaxHealth();
+	}
+}
+
+void UCheatManagerBase::SetCurrentAmmoAmount(int32 AmmoAmount)
+{
+	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (AMainCharacter* MainCharacter = Cast<AMainCharacter>(PlayerCharacter))
+	{
+		if (UCombatComponent* CombatComponent = MainCharacter->GetCombat())
+		{
+			CombatComponent->SetCurrentAmmoAmount(AmmoAmount);
+		}
+	}
+}

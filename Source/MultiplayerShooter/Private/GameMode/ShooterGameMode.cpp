@@ -39,16 +39,46 @@ void AShooterGameMode::Tick(float DeltaSeconds)
 
 	if (MatchState == MatchState::WaitingToStart)
 	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				0.f,
+				FColor::Yellow,
+				FString::Printf(TEXT("AShooterGameMode::Tick MatchState::WaitingToStart"))
+			);
+		}
+
 		CountdownTime = WarmupTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f) StartMatch();
 	}
 	else if (MatchState == MatchState::InProgress)
 	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				0.f,
+				FColor::Yellow,
+				FString::Printf(TEXT("AShooterGameMode::Tick MatchState::InProgress"))
+			);
+		}
+
 		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (CountdownTime <= 0.f) SetMatchState(MatchState::Cooldown);
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				0.f,
+				FColor::Yellow,
+				FString::Printf(TEXT("AShooterGameMode::Tick MatchState::Cooldown"))
+			);
+		}
+
 		CountdownTime = WarmupTime + MatchTime + CooldownTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 
 		if (CountdownTime <= 0.f) RestartGame();
@@ -114,7 +144,10 @@ void AShooterGameMode::PlayerEliminated(AMainCharacter* EliminatedCharacter, ASh
 
 	AShooterPlayerState* AttackerPlayerState = AttackerController->GetPlayerState<AShooterPlayerState>();
 	AShooterPlayerState* VictimPlayerState = VictimController->GetPlayerState<AShooterPlayerState>();
-	if (!AttackerPlayerState || !VictimPlayerState) return;
+	if (!AttackerPlayerState || !VictimPlayerState || MatchState != MatchState::InProgress)
+	{
+		return;
+	}
 
 	// Need to check if it's suicide.
 	if (AttackerPlayerState != VictimPlayerState)

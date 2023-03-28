@@ -20,7 +20,7 @@ public:
 	FORCEINLINE void SetHUDPackage(FHUDPackage Package) { HUDPackage = Package; }
 	FORCEINLINE void SetHUDSpread(float Spread) { HUDPackage.CrosshairsCurrentSpread = Spread; }
 	
-	FORCEINLINE class UCharacterOverlay* GetCharacterOverlay() const { return CharacterOverlay; }
+	class UCharacterOverlay* GetCharacterOverlay();
 	/** Add CharacterOverlay Widget when MatchState is InProgress */
 	void AddCharacterOverlay();
 
